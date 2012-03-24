@@ -10,6 +10,12 @@ import org.terasology.persistence.interfaces.StorageWriter;
  */
 public final class StringComponent extends AbstractComponent {
     public String value;
+    
+    public StringComponent() {}
+    
+    public StringComponent(String value) {
+        this.value = value;
+    }
 
     @Override
     public boolean equals(Object o) {

@@ -1,6 +1,7 @@
 package org.terasology.entitySystem.pojo;
 
 import org.terasology.entitySystem.Component;
+import org.terasology.entitySystem.EntityManager;
 import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.Event;
 
@@ -16,7 +17,7 @@ public class PojoEntityRef implements EntityRef{
         this.entityManager = manager;
     }
 
-    public long getId() {
+    public Object getId() {
         return id;
     }
 

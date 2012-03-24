@@ -5,10 +5,6 @@ package org.terasology.entitySystem;
  * @author Immortius <immortius@gmail.com>
  */
 public interface EntityRef {
-    /**
-     * @return The identifier for this entity
-     */
-    long getId();
 
     /**
      *

@@ -8,7 +8,6 @@ import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.EntityManager;
 import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.EventSystem;
-import org.terasology.entitySystem.common.NullEntityRef;
 import org.terasology.entitySystem.common.NullIterator;
 import org.terasology.entitySystem.event.AddComponentEvent;
 import org.terasology.entitySystem.event.ChangedComponentEvent;
@@ -30,6 +29,10 @@ public class PojoEntityManager implements EntityManager {
     ComponentTable store = new ComponentTable();
     private EventSystem eventSystem;
 
+    public void registerComponentType(Class<? extends Component> componentclass) {
+        // No implementation needed
+    }
+
     public EntityRef create() {
         return new PojoEntityRef(this, nextEntityId++);
     }
@@ -39,7 +42,6 @@ public class PojoEntityManager implements EntityManager {
             return null;
         }
         return new PojoEntityRef(this, entityId);
-
     }
 
     public void destroy(long entityId) {
@@ -81,7 +83,7 @@ public class PojoEntityManager implements EntityManager {
         }
     }
 
-    public int getComponentCount(Class<? extends Component> componentClass) {
+    public long getComponentCount(Class<? extends Component> componentClass) {
         return store.getComponentCount(componentClass);
     }
 

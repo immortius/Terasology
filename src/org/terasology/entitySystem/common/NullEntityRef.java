@@ -18,10 +18,6 @@ public class NullEntityRef implements EntityRef {
     private NullEntityRef() {
     }
 
-    public long getId() {
-        return 0;
-    }
-
     public <T extends Component> T getComponent(Class<T> componentClass) {
         return null;
     }

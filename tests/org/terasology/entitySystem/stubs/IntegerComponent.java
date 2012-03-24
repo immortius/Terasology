@@ -8,7 +8,21 @@ import org.terasology.persistence.interfaces.StorageWriter;
  * @author Immortius <immortius@gmail.com>
  */
 public final class IntegerComponent extends AbstractComponent {
-    int value;
+    private int value;
+    
+    public IntegerComponent() {}
+    
+    public IntegerComponent(int value) {
+        this.value = value;
+    }
+    
+    public int getValue() {
+        return value;
+    }
+
+    public void setValue(int newValue) {
+        value = newValue;
+    }
 
     @Override
     public boolean equals(Object o) {
