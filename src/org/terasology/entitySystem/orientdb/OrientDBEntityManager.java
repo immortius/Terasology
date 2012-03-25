@@ -1,7 +1,9 @@
 package org.terasology.entitySystem.orientdb;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.orientechnologies.orient.core.command.OCommandOutputListener;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabasePool;
@@ -41,6 +43,8 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author Immortius <immortius@gmail.com>
  */
+// TODO: Support for sets
+// TODO: Support for maps
 public class OrientDBEntityManager implements EntityManager {
 
     private static final String EntityVertexType = "Entity";
@@ -416,9 +420,14 @@ public class OrientDBEntityManager implements EntityManager {
             }
             for (RelationshipInfo relationshipInfo : info.relationships) {
                 for (RelationshipInfo relationship : info.relationships) {
-                    EntityRef ref = getReference(componentDoc, relationship.field.getName());
-                    if (ref != null) {
-                        relationship.field.set(component, ref);
+                    if (relationship.isList) {
+                        List<EntityRef> refs = getReferences(componentDoc, relationship.field.getName());
+                        relationship.field.set(component, refs);
+                    } else {
+                        EntityRef ref = getReference(componentDoc, relationship.field.getName());
+                        if (ref != null) {
+                            relationship.field.set(component, ref);
+                        }
                     }
                 }
             }
@@ -444,7 +453,8 @@ public class OrientDBEntityManager implements EntityManager {
 
             for (RelationshipInfo relationship : info.relationships) {
                 if (relationship.isList) {
-
+                    List<EntityRef> refs = (List<EntityRef>)relationship.field.get(component);
+                    setReferences(componentDoc, refs, relationship.field.getName());
                 } else {
                     EntityRef ref = (EntityRef)relationship.field.get(component);
                     setReference(componentDoc, ref, relationship.field.getName());
@@ -468,6 +478,22 @@ public class OrientDBEntityManager implements EntityManager {
             }
         }
         return null;
+    }
+
+    public List<EntityRef> getReferences(ODocument component, String label) {
+        OGraphDatabase db = getDB();
+        List<EntityRef> result = Lists.newArrayList();
+        for (OIdentifiable e : db.getOutEdges(component)) {
+            ODocument edgeDoc = (ODocument) e;
+
+            if (ReferencesEdgeType.equals(edgeDoc.getClassName())) {
+                if (label.equals(edgeDoc.field(OGraphDatabase.LABEL))) {
+                    OIdentifiable v = edgeDoc.field(OGraphDatabase.EDGE_FIELD_IN);
+                    result.add(getEntityRef(v.getIdentity()));
+                }
+            }
+        }
+        return result;
     }
     
     private void setReference(ODocument component, EntityRef entityRef, String label) {
@@ -499,6 +525,48 @@ public class OrientDBEntityManager implements EntityManager {
             edge = db.createEdge(component, entity, ReferencesEdgeType);
             edge.field(OGraphDatabase.LABEL, label);
             edge.save();
+        }
+    }
+
+    private void setReferences(ODocument component, List<EntityRef> entityRefs, String label) {
+        OGraphDatabase db = getDB();
+
+        // Check Edges, find existing matchs
+        Multimap<ORID, ODocument> existingEdges = HashMultimap.create();
+        for (OIdentifiable e : db.getOutEdges(component)) {
+            ODocument edgeDoc = (ODocument) e;
+
+            if (ReferencesEdgeType.equals(edgeDoc.getClassName())) {
+                if (label.equals(edgeDoc.field(OGraphDatabase.LABEL))) {
+                    ORID target = edgeDoc.<OIdentifiable>field(OGraphDatabase.EDGE_FIELD_IN).getIdentity();
+                    existingEdges.put(target, edgeDoc);
+                }
+            }
+        }
+
+        if (entityRefs != null) {
+            for (EntityRef entityRef : entityRefs) {
+                ODocument entity = null;
+                if (entityRef instanceof OrientDBEntityRef) {
+                    entity = db.load(((OrientDBEntityRef)entityRef).getId());
+                }
+                if (entity == null) continue;
+                Iterator<ODocument> edges = existingEdges.get(entity.getIdentity()).iterator();
+                // We already have an edge for this reference, remove from collection so it isn't destroyed later
+                if (edges.hasNext()) {
+                    edges.next();
+                    edges.remove();
+                } else {
+                    ODocument edge = db.createEdge(component, entity, ReferencesEdgeType);
+                    edge.field(OGraphDatabase.LABEL, label);
+                    edge.save();                     
+                }
+            }
+        }
+
+        // Remove unmatched edges
+        for (ODocument edge : existingEdges.values()) {
+            db.removeEdge(edge);
         }
     }
 

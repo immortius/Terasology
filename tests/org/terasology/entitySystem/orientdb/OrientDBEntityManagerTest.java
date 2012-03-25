@@ -152,13 +152,43 @@ public class OrientDBEntityManagerTest extends EntityManagerTest {
         
         EntityRefComponent original = new EntityRefComponent();
         original.reference = referencedEntity;
-        original.refs.add(referencedEntity);
-        
+
         mainEntity.addComponent(original);
 
         EntityRefComponent retrieved = mainEntity.getComponent(EntityRefComponent.class);
         assertEquals(original.reference, retrieved.reference);
         assertEquals(original.refs, retrieved.refs);
+    }
+
+    @Test
+    public void entityRefListSerialization() {
+        EntityRef mainEntity = entityManager.create();
+        EntityRef referencedEntity1 = entityManager.create();
+        EntityRef referencedEntity2 = entityManager.create();
+
+        EntityRefComponent original = new EntityRefComponent();
+        original.refs.add(referencedEntity1);
+        original.refs.add(referencedEntity2);
+
+        mainEntity.addComponent(original);
+
+        EntityRefComponent retrieved = mainEntity.getComponent(EntityRefComponent.class);
+        assertEquals(original.refs, retrieved.refs);
+    }
+
+    @Test
+    public void entityRefRemoval() {
+        EntityRef mainEntity = entityManager.create();
+        EntityRef referencedEntity1 = entityManager.create();
+
+        EntityRefComponent original = new EntityRefComponent();
+        original.reference = referencedEntity1;
+        mainEntity.addComponent(original);
+
+        referencedEntity1.destroy();
+
+        EntityRefComponent retrieved = mainEntity.getComponent(EntityRefComponent.class);
+        assertEquals(null, retrieved.reference);
     }
 
 }
