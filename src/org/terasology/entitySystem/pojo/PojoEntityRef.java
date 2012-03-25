@@ -21,6 +21,10 @@ public class PojoEntityRef implements EntityRef{
         return id;
     }
 
+    public boolean exists() {
+        return true;
+    }
+
     public <T extends Component> T getComponent(Class<T> componentClass) {
         return entityManager.getComponent(id, componentClass);
     }

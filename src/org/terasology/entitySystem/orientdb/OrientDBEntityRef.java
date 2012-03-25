@@ -18,8 +18,12 @@ public class OrientDBEntityRef implements EntityRef{
         this.entityManager = manager;
     }
 
-    public Object getId() {
+    public ORID getId() {
         return id;
+    }
+
+    public boolean exists() {
+        return entityManager.exists(id);
     }
 
     public <T extends Component> T getComponent(Class<T> componentClass) {

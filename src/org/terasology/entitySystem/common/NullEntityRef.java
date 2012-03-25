@@ -18,6 +18,10 @@ public class NullEntityRef implements EntityRef {
     private NullEntityRef() {
     }
 
+    public boolean exists() {
+        return false;
+    }
+
     public <T extends Component> T getComponent(Class<T> componentClass) {
         return null;
     }

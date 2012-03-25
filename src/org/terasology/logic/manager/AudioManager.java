@@ -41,7 +41,7 @@ import java.util.logging.Logger;
  * @author Benjamin Glatzel <benjamin.glatzel@me.com>
  * @author t3hk0d3 <contact@tehkode.ru>
  */
-public abstract class AudioManager {
+public abstract class AudioManager implements SoundManager {
 
     public final static float MAX_DISTANCE = 50.0f;
 
@@ -158,23 +158,6 @@ public abstract class AudioManager {
 
         return sound;
     }
-
-    /**
-     * Initializes AudioManager
-     */
-    public abstract void initialize();
-
-    /**
-     * Update AudioManager sound sources
-     * <p/>
-     * Should be called in main game loop
-     */
-    public abstract void update();
-
-    /**
-     * Gracefully destroy audio subsystem
-     */
-    public abstract void destroy();
 
     protected abstract boolean checkDistance(Vector3d soundSource);
 

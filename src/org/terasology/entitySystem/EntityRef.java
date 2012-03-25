@@ -8,6 +8,12 @@ public interface EntityRef {
 
     /**
      *
+     * @return Whether this entity ref is for a valid, existing entity.
+     */
+    boolean exists();
+
+    /**
+     *
      * @param componentClass
      * @param <T>
      * @return The requested component, or null if the entity doesn't have a component of this class

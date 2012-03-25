@@ -2,16 +2,21 @@ package org.terasology.entitySystem.orientdb;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.orientechnologies.orient.core.command.OCommandOutputListener;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabasePool;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.db.tool.ODatabaseExport;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
+import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.security.OSecurity;
 import com.orientechnologies.orient.core.metadata.security.OUser;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.serialization.OSerializableStream;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
+import org.junit.runners.Parameterized;
 import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.EntityManager;
 import org.terasology.entitySystem.EntityRef;
@@ -19,8 +24,14 @@ import org.terasology.entitySystem.EventSystem;
 import org.terasology.entitySystem.event.AddComponentEvent;
 import org.terasology.entitySystem.event.ChangedComponentEvent;
 import org.terasology.entitySystem.event.RemovedComponentEvent;
+import org.terasology.entitySystem.orientdb.types.EnumTypeHandler;
+import org.terasology.entitySystem.orientdb.types.ListTypeHandler;
+import org.terasology.entitySystem.orientdb.types.MappedContainerTypeHandler;
+import org.terasology.entitySystem.orientdb.types.SimpleTypeHandler;
 
-import java.lang.reflect.Field;
+import java.io.IOException;
+import java.lang.reflect.*;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,6 +58,33 @@ public class OrientDBEntityManager implements EntityManager {
     private OGraphDatabasePool pool;
     
     private Map<String, Class<? extends Component>> registeredComponents = Maps.newHashMap();
+    private Map<Class<?>, ValueTypeHandler<?>> customTypeHandlers = Maps.newHashMap();
+    private Map<Class<? extends Component>, SerializationInfo> componentSerializationLookup = Maps.newHashMap();
+
+    private static class SerializationInfo {
+        public List<FieldInfo> fields = Lists.newArrayList();
+        public List<RelationshipInfo> relationships = Lists.newArrayList();
+    }
+    
+    private static class FieldInfo {
+        public Field field;
+        public ValueTypeHandler serializationHandler;
+        
+        public FieldInfo(Field field, ValueTypeHandler handler) {
+            this.field = field;
+            this.serializationHandler = handler;
+        }
+    }
+    
+    private static class RelationshipInfo {
+        public Field field;
+        public boolean isList;
+        
+        public RelationshipInfo(Field field, boolean isList) {
+            this.field = field;
+            this.isList = isList;
+        }
+    }
 
     // ODatabaseDocument is not thread-safe, so we need to acquire a different copy per thread
     public ThreadLocal<OGraphDatabase> localDatabase = new ThreadLocal<OGraphDatabase>();
@@ -64,9 +102,44 @@ public class OrientDBEntityManager implements EntityManager {
         pool.setup(1, 10);
 
         localDatabase.set(pool.acquire(dbLocation, dbUsername, dbPassword));
+
+        SimpleTypeHandler simpleTypeHandler  = new SimpleTypeHandler();
+        customTypeHandlers.put(Boolean.class, simpleTypeHandler);
+        customTypeHandlers.put(Integer.class, simpleTypeHandler);
+        customTypeHandlers.put(Short.class, simpleTypeHandler);
+        customTypeHandlers.put(Long.class, simpleTypeHandler);
+        customTypeHandlers.put(Float.class, simpleTypeHandler);
+        customTypeHandlers.put(Double.class, simpleTypeHandler);
+        customTypeHandlers.put(Boolean.TYPE, simpleTypeHandler);
+        customTypeHandlers.put(Integer.TYPE, simpleTypeHandler);
+        customTypeHandlers.put(Short.TYPE, simpleTypeHandler);
+        customTypeHandlers.put(Long.TYPE, simpleTypeHandler);
+        customTypeHandlers.put(Float.TYPE, simpleTypeHandler);
+        customTypeHandlers.put(Double.TYPE, simpleTypeHandler);
+        customTypeHandlers.put(Byte.TYPE, simpleTypeHandler);
+        customTypeHandlers.put(Date.class, simpleTypeHandler);
+        customTypeHandlers.put(String.class, simpleTypeHandler);
+        customTypeHandlers.put(Array.class, simpleTypeHandler);
+        customTypeHandlers.put(OSerializableStream.class, simpleTypeHandler);
+        customTypeHandlers.put(Byte.class, simpleTypeHandler);
+        customTypeHandlers.put(BigDecimal.class, simpleTypeHandler);
+    }
+    
+    public void dumpDB(String file) throws IOException {
+
+        ODatabaseExport exporter = new ODatabaseExport(getDB(), file, new OCommandOutputListener() {
+            public void onMessage(String iText) {
+            }
+        });
+        exporter.exportDatabase();
+        exporter.close();
     }
 
-    // TODO: Register component types
+    public void setCacheEnabled(boolean enabled) {
+        getDB().getLevel1Cache().setEnable(enabled);
+        getDB().getLevel2Cache().setEnable(enabled);
+    }
+
     public void registerComponentType(Class<? extends Component> componentClass) {
         OGraphDatabase db = getDB();
         if (db.getVertexType(getComponentVertexType(componentClass)) == null) {
@@ -74,10 +147,82 @@ public class OrientDBEntityManager implements EntityManager {
             db.getMetadata().getSchema().save();
         }
         registeredComponents.put(getComponentVertexType(componentClass), componentClass);
+        SerializationInfo info = new SerializationInfo();
         for (Field field : componentClass.getDeclaredFields()) {
             field.setAccessible(true);
+            if (isRelationshipField(field)) {
+                info.relationships.add(new RelationshipInfo(field, List.class.isAssignableFrom(field.getType())));
+            } else {
+                ValueTypeHandler handler = getHandlerFor(field.getGenericType(), true);
+                if (handler == null) {
+                    logger.log(Level.SEVERE, "Unsupported field type in component type " + componentClass.getSimpleName() + ", " + field.getName() + " : " + field.getGenericType());
+                } else {
+                    info.fields.add(new FieldInfo(field, handler));
+                }
+            }
         }
+        componentSerializationLookup.put(componentClass, info);
     }
+
+    private boolean isRelationshipField(Field field) {
+        if (EntityRef.class.isAssignableFrom(field.getType())) {
+            return true;
+        }
+        if (List.class.isAssignableFrom(field.getType())) {
+            Type type = field.getGenericType();
+            if (type instanceof ParameterizedType) {
+                ParameterizedType genericType = (ParameterizedType)type;
+                if (genericType.getActualTypeArguments().length > 0 && genericType.getActualTypeArguments()[0] == EntityRef.class) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public <T> void registerValueTypeHandler(Class<? extends T> type, ValueTypeHandler<T> handler) {
+        customTypeHandlers.put(type, handler);
+    }
+
+    private ValueTypeHandler getHandlerFor(Type type, boolean allowMappedContainer) {
+        Class typeClass = null;
+        if (type instanceof Class) {
+            typeClass = (Class) type;
+        } else if (type instanceof ParameterizedType) {
+            typeClass = (Class) ((ParameterizedType) type).getRawType();
+        }
+
+        if (Enum.class.isAssignableFrom(typeClass)) {
+            return new EnumTypeHandler(typeClass);
+        }
+        else if (List.class.isAssignableFrom(typeClass)) {
+            if (type instanceof ParameterizedType && ((ParameterizedType) type).getActualTypeArguments().length > 0)
+            {
+                ValueTypeHandler innerHandler = getHandlerFor(((ParameterizedType)type).getActualTypeArguments()[0], allowMappedContainer);
+                if (innerHandler != null) {
+                    return new ListTypeHandler(innerHandler);
+                }
+            }
+        } else if (customTypeHandlers.containsKey(typeClass)) {
+            return customTypeHandlers.get(typeClass);
+        } else if (allowMappedContainer && !typeClass.isLocalClass() && !(typeClass.isMemberClass() && !Modifier.isStatic(typeClass.getModifiers()))) {
+            logger.log(Level.WARNING, "Handling serialization of type " + typeClass + " via MappedContainer");
+            MappedContainerTypeHandler mappedHandler = new MappedContainerTypeHandler(typeClass);
+            for (Field field : typeClass.getDeclaredFields()) {
+                field.setAccessible(true);
+                ValueTypeHandler handler = getHandlerFor(field.getGenericType(), false);
+                mappedHandler.addField(field, handler);
+            }
+            return mappedHandler;
+        }
+
+        return null;
+    }
+
+    public boolean exists(ORID id) {
+        return getDB().load(id) != null;
+    }
+
 
     public EntityRef create() {
         ODocument entity = getDB().createVertex(EntityVertexType);
@@ -97,9 +242,7 @@ public class OrientDBEntityManager implements EntityManager {
                 componentDoc.field(OGraphDatabase.LABEL, getComponentVertexType(component));
                 componentUpdate = false;
             }
-            // TODO: Improved save
             serializeComponent(componentDoc, component);
-            componentDoc.save();
             if (!componentUpdate) {
                 ODocument edge = db.createEdge(entity, componentDoc, OwnsEdgeType);
                 edge.field(OGraphDatabase.LABEL, getComponentVertexType(component));
@@ -121,7 +264,9 @@ public class OrientDBEntityManager implements EntityManager {
         ODocument entity = db.load(entityId);
         if (entity != null) {
             ODocument componentDoc = findComponentOfEntity(entity, componentClass);
-            return deserializeComponent(componentDoc, componentClass);
+            if (componentDoc != null) {
+                return deserializeComponent(componentDoc, componentClass);
+            }
         }
         return null;
     }
@@ -139,6 +284,9 @@ public class OrientDBEntityManager implements EntityManager {
                 ODocument component = db.getInVertex((ODocument) outEdge);
                 db.removeVertex(component);
             }
+
+            // Relationships will have changed from the above, reload.
+            entity.reload();
             // Remove this vertex
             getDB().removeVertex(entity);
         }
@@ -178,7 +326,6 @@ public class OrientDBEntityManager implements EntityManager {
             return;
         
         serializeComponent(componentDoc, component);
-        componentDoc.save();
         
         if (eventSystem != null) {
             eventSystem.send(getEntityRef(entityId), ChangedComponentEvent.newInstance(), component);
@@ -257,30 +404,101 @@ public class OrientDBEntityManager implements EntityManager {
     }
 
     private <T extends Component> T deserializeComponent(ODocument componentDoc, Class<T> componentClass) {
-        if (componentDoc != null) {
-            try {
-                // TODO: Improved load
-                T component = componentClass.newInstance();
-                for (Field field : component.getClass().getDeclaredFields()) {
-                    field.setAccessible(true);
-                    field.set(component, componentDoc.field(field.getName()));
-                }
-                return component;
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, "Failed to deserialize componentL " + componentDoc.toJSON(), e);
+        SerializationInfo info = componentSerializationLookup.get(componentClass);
+        try {
+            T component = componentClass.newInstance();
+            for (FieldInfo fieldInfo : info.fields) {
+                Object value = componentDoc.field(fieldInfo.field.getName());
+                if (value == null) continue;
+                Object deserializedValue = fieldInfo.serializationHandler.deserialize(value);
+                if (deserializedValue == null) continue;
+                fieldInfo.field.set(component, deserializedValue);
             }
+            for (RelationshipInfo relationshipInfo : info.relationships) {
+                for (RelationshipInfo relationship : info.relationships) {
+                    EntityRef ref = getReference(componentDoc, relationship.field.getName());
+                    if (ref != null) {
+                        relationship.field.set(component, ref);
+                    }
+                }
+            }
+            return component;
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to deserialize component: " + componentDoc.toJSON(), e);
         }
+
         return null;
     }
 
     private <T extends Component> void serializeComponent(ODocument componentDoc, T component) {
+        OGraphDatabase db = getDB();
+        if (component == null || componentDoc == null) return;
         try {
-            for (Field field : component.getClass().getDeclaredFields()) {
-                field.setAccessible(true);
-                componentDoc.field(field.getName(), field.get(component));
+            SerializationInfo info = componentSerializationLookup.get(component.getClass());
+            for (FieldInfo fieldInfo : info.fields) {
+                Object value = fieldInfo.field.get(component);
+                Object serializedValue = fieldInfo.serializationHandler.serialize(value);
+                componentDoc.field(fieldInfo.field.getName(), serializedValue);
+            }
+            componentDoc.save();
+
+            for (RelationshipInfo relationship : info.relationships) {
+                if (relationship.isList) {
+
+                } else {
+                    EntityRef ref = (EntityRef)relationship.field.get(component);
+                    setReference(componentDoc, ref, relationship.field.getName());
+                }
             }
         } catch (IllegalAccessException e) {
             logger.log(Level.SEVERE, "Error serializing component: " + component, e);
+        }
+    }
+    
+    public EntityRef getReference(ODocument component, String label) {
+        OGraphDatabase db = getDB();
+        for (OIdentifiable e : db.getOutEdges(component)) {
+            ODocument edgeDoc = (ODocument) e;
+
+            if (ReferencesEdgeType.equals(edgeDoc.getClassName())) {
+                if (label.equals(edgeDoc.field(OGraphDatabase.LABEL))) {
+                    OIdentifiable v = edgeDoc.field(OGraphDatabase.EDGE_FIELD_IN);
+                    return getEntityRef(v.getIdentity());
+                }
+            }
+        }
+        return null;
+    }
+    
+    private void setReference(ODocument component, EntityRef entityRef, String label) {
+        OGraphDatabase db = getDB();
+        ODocument entity = null;
+        if (entityRef instanceof OrientDBEntityRef) {
+            entity = db.load(((OrientDBEntityRef)entityRef).getId());
+        }
+        ODocument edge = null;
+
+        // Check Edges, find existing match and remove existing with same label
+        for (OIdentifiable e : db.getOutEdges(component)) {
+            ODocument edgeDoc = (ODocument) e;
+            
+            if (ReferencesEdgeType.equals(edgeDoc.getClassName())) {
+                if (label.equals(edgeDoc.field(OGraphDatabase.LABEL))) {
+                    ODocument targetDoc = db.getInVertex(edgeDoc);
+                    if (edge == null && targetDoc.equals(entity)) {
+                        edge = edgeDoc;
+                    } else {
+                        db.removeEdge(edge);
+                    }
+                }
+            }
+        }
+        
+        // Create new edge
+        if (edge == null && entity != null) {
+            edge = db.createEdge(component, entity, ReferencesEdgeType);
+            edge.field(OGraphDatabase.LABEL, label);
+            edge.save();
         }
     }
 

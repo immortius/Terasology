@@ -39,6 +39,12 @@ public abstract class EntityManagerTest {
 
         assertEquals(comp, entity.getComponent(StringComponent.class));
     }
+    
+    @Test
+    public void getNonexistantComponent() {
+        EntityRef entity = entityManager.create();
+        assertNull(entity.getComponent(StringComponent.class));
+    }
 
     @Test
     public void removeComponent() {
@@ -76,6 +82,21 @@ public abstract class EntityManagerTest {
 
         assertNull(entity.getComponent(StringComponent.class));
         assertNull(entity.getComponent(IntegerComponent.class));
+    }
+
+    @Test
+    public void destroyingEntityDestroysComponents() {
+        EntityRef entity = entityManager.create();
+
+        entity.addComponent(new StringComponent());
+        entity.addComponent(new IntegerComponent());
+        entity.destroy();
+
+        assertEquals(0, entityManager.getComponentCount(StringComponent.class));
+        assertEquals(0, entityManager.getComponentCount(IntegerComponent.class));
+
+        assertFalse(entityManager.iterateComponents(StringComponent.class).iterator().hasNext());
+        assertFalse(entityManager.iterateComponents(IntegerComponent.class).iterator().hasNext());
     }
 
     @Test
