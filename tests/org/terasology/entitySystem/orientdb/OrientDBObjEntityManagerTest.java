@@ -1,42 +1,43 @@
 package org.terasology.entitySystem.orientdb;
 
-import com.google.common.collect.Lists;
 import com.orientechnologies.orient.core.Orient;
-import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
+import com.orientechnologies.orient.core.db.object.ODatabaseObject;
+import com.orientechnologies.orient.core.db.object.ODatabaseObjectTx;
 import com.orientechnologies.orient.core.index.OIndex;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.terasology.entitySystem.EntityManagerTest;
 import org.terasology.entitySystem.EntityRef;
-import org.terasology.entitySystem.orientdb.types.Vector3fTypeHandler;
+import org.terasology.entitySystem.orientdbobject.OrientDBObjEntityManager;
+import org.terasology.entitySystem.orientdbobject.serializers.Vector3fSerializer;
+import org.terasology.entitySystem.orientdbobject.serializers.Vector3iSerializer;
 import org.terasology.entitySystem.stubs.*;
 
 import javax.vecmath.Vector3f;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 /**
  * @author Immortius <immortius@gmail.com>
  */
-public class OrientDBEntityManagerTest extends EntityManagerTest {
+public class OrientDBObjEntityManagerTest extends EntityManagerTest {
 
     @Before
     public void setup() {
-        OGraphDatabase db = new OGraphDatabase("memory:test");
+        ODatabaseObject db = new ODatabaseObjectTx("memory:test");
         if (db.exists()) {
             db.open("admin", "admin");
             for (OIndex index : db.getMetadata().getIndexManager().getIndexes()) {
                 index.delete();
             }
             db.drop();
-            db.close();
         }
-        OrientDBEntityManager orientdbManager = new OrientDBEntityManager("memory:test", "name", "password");
+        OrientDBObjEntityManager orientdbManager = new OrientDBObjEntityManager("memory:test", "name", "password");
         entityManager = orientdbManager;
-        orientdbManager.registerValueTypeHandler(Vector3f.class, new Vector3fTypeHandler());
+
+        orientdbManager.registerValueSerializer(new Vector3fSerializer());
+        orientdbManager.registerValueSerializer(new Vector3iSerializer());
         entityManager.registerComponentType(StringComponent.class);
         entityManager.registerComponentType(IntegerComponent.class);
         entityManager.registerComponentType(Vector3fComponent.class);
@@ -55,6 +56,14 @@ public class OrientDBEntityManagerTest extends EntityManagerTest {
     }
 
     @Test
+    public void deleteEntityExistCheck() {
+        EntityRef entity = entityManager.create();
+        assertTrue(entity.exists());
+        entity.destroy();
+        assertFalse(entity.exists());
+    }
+
+    @Test
     public void entityRemovedWhenDestroyed() {
         EntityRef entity = entityManager.create();
 
@@ -63,16 +72,6 @@ public class OrientDBEntityManagerTest extends EntityManagerTest {
         entity.destroy();
 
         assertFalse(entity.exists());
-    }
-
-    @Test
-    public void testNoChangeWithoutSave() {
-        EntityRef entity = entityManager.create();
-        entity.addComponent(new StringComponent("TEST"));
-        StringComponent comp = entity.getComponent(StringComponent.class);
-        comp.value = "WRONG";
-
-        assertEquals("TEST", entity.getComponent(StringComponent.class).value);
     }
 
     @Test
@@ -166,7 +165,31 @@ public class OrientDBEntityManagerTest extends EntityManagerTest {
         referencedEntity1.destroy();
 
         EntityRefComponent retrieved = mainEntity.getComponent(EntityRefComponent.class);
-        assertEquals(null, retrieved.reference);
+        assertFalse(retrieved.reference.exists());
+    }
+    
+    @Test
+    public void nullVector3f() throws Exception {
+        EntityRef entity = entityManager.create();
+        Vector3fComponent comp = new Vector3fComponent();
+        comp.value = null;
+        entity.addComponent(comp);
+
+        entity = entityManager.iteratorEntities(Vector3fComponent.class).iterator().next();
+        comp = entity.getComponent(Vector3fComponent.class);
+        assertNotNull(comp);
+    }
+
+    @Test
+    public void handlesVector3f() throws Exception {
+        EntityRef entity = entityManager.create();
+        Vector3fComponent comp = new Vector3fComponent();
+        comp.setValue(new Vector3f(1,2,4));
+        entity.addComponent(comp);
+
+        entity = entityManager.iteratorEntities(Vector3fComponent.class).iterator().next();
+        Vector3fComponent result = entity.getComponent(Vector3fComponent.class);
+        assertEquals(comp.getValue(), result.getValue());
     }
 
 }

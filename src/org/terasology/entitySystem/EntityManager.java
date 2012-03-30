@@ -13,6 +13,7 @@ import java.util.Map;
 public interface EntityManager {
 
     void registerComponentType(Class<? extends Component> componentclass);
+    void dispose();
 
     /**
      * @return A references to a new, unused entity

@@ -25,24 +25,27 @@ public class GelatinousCubeFactory {
         // TODO: Replace a lot of this with prefab instantiation
         EntityRef entity = Terasology.getInstance().getCurrentGameState().getEntityManager().create();
 
-        LocationComponent loc = entity.addComponent(new LocationComponent());
+        LocationComponent loc = new LocationComponent();
         loc.setLocalPosition(position);
         loc.setLocalScale((float) (((random.randomDouble() + 1.0) / 2.0) * 0.8 + 0.2));
+        entity.addComponent(loc);
 
-        MeshComponent mesh = entity.addComponent(new MeshComponent());
+        MeshComponent mesh = new MeshComponent();
         int colorId = Math.abs(random.randomInt()) % COLORS.length;
         mesh.color.set(COLORS[colorId].x, COLORS[colorId].y, COLORS[colorId].z, 1.0f);
+        entity.addComponent(mesh);
 
-        CharacterMovementComponent moveComp = entity.addComponent(new CharacterMovementComponent());
+        CharacterMovementComponent moveComp = new CharacterMovementComponent();
         moveComp.faceMovementDirection = true;
+        entity.addComponent(moveComp);
 
         entity.addComponent(new SimpleAIComponent());
-        AABBCollisionComponent comp = entity.addComponent(new AABBCollisionComponent());
-        comp.getExtents().set(0.5f, 0.5f, 0.5f);
-        
-        CharacterSoundComponent soundComp = entity.addComponent(new CharacterSoundComponent());
+        AABBCollisionComponent comp = entity.addComponent(new AABBCollisionComponent(new Vector3f(0.5f, 0.5f, 0.5f)));
+
+        CharacterSoundComponent soundComp = new CharacterSoundComponent();
         soundComp.footstepSounds.addAll(Arrays.asList(AudioManager.sounds("Slime1", "Slime2", "Slime3", "Slime4", "Slime5")));
         soundComp.footstepVolume = 0.7f;
+        entity.addComponent(soundComp);
 
         return entity;
     }

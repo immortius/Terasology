@@ -71,6 +71,8 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
 
     private double mouseSensititivy = Config.getInstance().getMouseSens();
     private float lastTimeSpacePressed;
+
+    // TODO: last interaction should be in an component, and checked by the server
     private float lastInteraction;
     private boolean toggleGodMode;
 
@@ -110,12 +112,14 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
         // TODO: Remove, use component camera, breaks spawn camera anyway
         Quat4f lookRotation = new Quat4f();
         QuaternionUtil.setEuler(lookRotation, TeraMath.DEG_TO_RAD * localPlayerComponent.viewYaw, TeraMath.DEG_TO_RAD * localPlayerComponent.viewPitch, 0);
-        updateCamera(location.getWorldPosition(), lookRotation);
+        updateCamera(location.getWorldPosition(), lookRotation, characterMovementComponent);
 
         // Hand animation update
         localPlayerComponent.handAnimation = Math.max(0, localPlayerComponent.handAnimation - 2.5f * deltaSeconds);
         
         resetInput();
+        entity.saveComponent(localPlayerComponent);
+        entity.saveComponent(characterMovementComponent);
     }
 
     private void resetInput() {
@@ -159,6 +163,7 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
         if (localPlayerComponent.respawnWait > 0) {
             characterMovementComponent.getDrive().set(0,0,0);
             characterMovementComponent.jump = false;
+            entity.saveComponent(characterMovementComponent);
             return false;
         }
 
@@ -169,10 +174,12 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
             health.currentHealth = health.maxHealth;
         }
         location.setWorldPosition(playerComponent.spawnPosition);
+        entity.saveComponent(location);
+        entity.saveComponent(health);
         return true;
     }
 
-    private void updateCamera(Vector3f position, Quat4f rotation) {
+    private void updateCamera(Vector3f position, Quat4f rotation, CharacterMovementComponent charMovementComp) {
         // The camera position is the player's position plus the eye offset
         Vector3d cameraPosition = new Vector3d();
         // TODO: don't hardset eye position
@@ -183,7 +190,6 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
         QuaternionUtil.quatRotate(rotation, viewDir, viewDir);
         playerCamera.getViewingDirection().set(viewDir);
 
-        CharacterMovementComponent charMovementComp = localPlayer.getEntity().getComponent(CharacterMovementComponent.class);
         float stepDelta = charMovementComp.footstepDelta - lastStepDelta;
         if (stepDelta < 0) stepDelta += charMovementComp.distanceBetweenFootsteps;
         bobFactor += stepDelta;
@@ -231,6 +237,7 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
         LocalPlayerComponent localPlayer = entity.getComponent(LocalPlayerComponent.class);
         localPlayer.isDead = true;
         localPlayer.respawnWait = 1.0f;
+        entity.saveComponent(localPlayer);
     }
 
     /**
@@ -244,6 +251,7 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
         if (inventorySlotBindMap.containsKey(key)) {
             LocalPlayerComponent localPlayerComp = localPlayer.getEntity().getComponent(LocalPlayerComponent.class);
             localPlayerComp.selectedTool = inventorySlotBindMap.get(key);
+            localPlayer.getEntity().saveComponent(localPlayerComp);
             return;
         }
         switch (key) {
@@ -281,6 +289,7 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
             while (localPlayerComp.selectedTool < 0) {
                 localPlayerComp.selectedTool = 9 + localPlayerComp.selectedTool;
             }
+            localPlayer.getEntity().saveComponent(localPlayerComp);
         } else if (state && (button == 0 || button == 1)) {
             processInteractions(button);
         }
@@ -326,10 +335,12 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
             }
             lastInteraction = Terasology.getInstance().getTimeInMs();
             localPlayerComp.handAnimation = 0.5f;
+            entity.saveComponent(localPlayerComp);
         } else if (Mouse.isButtonDown(1) || button == 1) {
             attack(entity, selectedItemEntity);
             lastInteraction = Terasology.getInstance().getTimeInMs();
             localPlayerComp.handAnimation = 0.5f;
+            entity.saveComponent(localPlayerComp);
         }
 
     }

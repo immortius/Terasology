@@ -8,7 +8,7 @@ import javax.vecmath.Vector3f;
  * @author Immortius <immortius@gmail.com>
  */
 public class Vector3fComponent extends AbstractComponent {
-    private Vector3f value = new Vector3f();
+    public Vector3f value = new Vector3f();
 
     public Vector3f getValue() {
         return value;

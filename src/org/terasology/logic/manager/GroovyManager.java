@@ -24,7 +24,9 @@ import groovy.util.ScriptException;
 import org.terasology.components.*;
 import org.terasology.entityFactory.GelatinousCubeFactory;
 import org.terasology.entityFactory.BlockItemFactory;
+import org.terasology.entitySystem.EntityManager;
 import org.terasology.entitySystem.EntityRef;
+import org.terasology.entitySystem.orientdbobject.OrientDBObjEntityManager;
 import org.terasology.game.ComponentSystemManager;
 import org.terasology.game.CoreRegistry;
 import org.terasology.game.Terasology;
@@ -36,6 +38,7 @@ import org.terasology.model.blocks.BlockGroup;
 import org.terasology.model.blocks.management.BlockManager;
 
 import javax.vecmath.Vector3f;
+import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -200,6 +203,14 @@ public class GroovyManager {
                 StateSinglePlayer spState = (StateSinglePlayer) state;
                 spState.initWorld(title, seed);
             }
+        }
+
+        public void clearCache() {
+            ((OrientDBObjEntityManager)CoreRegistry.get(EntityManager.class)).clearCache();
+        }
+
+        public void dumpDB() throws IOException {
+            ((OrientDBObjEntityManager)CoreRegistry.get(EntityManager.class)).dumpDB("Test");
         }
         
         public void debugCollision() {

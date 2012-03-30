@@ -16,6 +16,12 @@ import javax.vecmath.Vector3f;
 public final class AABBCollisionComponent extends AbstractComponent {
 
     private Vector3f extents = new Vector3f();
+    
+    public AABBCollisionComponent() {}
+    
+    public AABBCollisionComponent(Vector3f extents) {
+        this.extents.set(extents);
+    }
 
     public Vector3f getExtents() {
         return extents;

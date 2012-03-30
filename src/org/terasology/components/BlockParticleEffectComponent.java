@@ -31,7 +31,8 @@ public final class BlockParticleEffectComponent extends AbstractComponent {
     public Vector3f acceleration = new Vector3f();
     public boolean collideWithBlocks = false;
 
-    public List<Particle> particles = Lists.newArrayList();
+    // TODO : Serialize?
+    public transient List<Particle> particles = Lists.newArrayList();
 
     public static class Particle implements Serializable, Cloneable {
         public Vector3f velocity = new Vector3f();

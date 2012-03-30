@@ -27,6 +27,8 @@ public class InventorySystem implements ComponentSystem {
         ItemComponent item = itemEntity.getComponent(ItemComponent.class);
         if (inventory == null || item == null)
             return false;
+        
+        int intitalCount = item.stackCount;
 
         // First check for existing stacks
         for (EntityRef itemStack : inventory.itemSlots) {
@@ -37,9 +39,11 @@ public class InventorySystem implements ComponentSystem {
                     int amountToTransfer = Math.min(stackSpace, item.stackCount);
                     stackComp.stackCount += amountToTransfer;
                     item.stackCount -= amountToTransfer;
+                    itemStack.saveComponent(stackComp);
 
                     if (item.stackCount == 0) {
                         itemEntity.destroy();
+                        inventoryEntity.saveComponent(inventory);
                         return true;
                     }
                 }
@@ -51,7 +55,13 @@ public class InventorySystem implements ComponentSystem {
         if (freeSlot != -1) {
             inventory.itemSlots.set(freeSlot, itemEntity);
             item.container = inventoryEntity;
+            itemEntity.saveComponent(item);
+            inventoryEntity.saveComponent(inventory);
             return true;
+        }
+        if (intitalCount != item.stackCount) {
+            itemEntity.saveComponent(item);
+            inventoryEntity.saveComponent(inventory);
         }
         return false;
     }

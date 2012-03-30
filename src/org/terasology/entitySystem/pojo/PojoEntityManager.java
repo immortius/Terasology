@@ -33,6 +33,10 @@ public class PojoEntityManager implements EntityManager {
         // No implementation needed
     }
 
+    public void dispose() {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public EntityRef create() {
         return new PojoEntityRef(this, nextEntityId++);
     }

@@ -1,5 +1,6 @@
 package org.terasology.entitySystem.orientdb;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -11,11 +12,20 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.db.tool.ODatabaseExport;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
+import com.orientechnologies.orient.core.index.OCompositeIndexDefinition;
+import com.orientechnologies.orient.core.index.OIndex;
+import com.orientechnologies.orient.core.index.OIndexManager;
+import com.orientechnologies.orient.core.intent.OIntent;
+import com.orientechnologies.orient.core.intent.OIntentMassiveInsert;
+import com.orientechnologies.orient.core.intent.OIntentMassiveRead;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.metadata.security.OSecurity;
 import com.orientechnologies.orient.core.metadata.security.OUser;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.serialization.OSerializableStream;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
 import org.junit.runners.Parameterized;
@@ -30,7 +40,9 @@ import org.terasology.entitySystem.orientdb.types.EnumTypeHandler;
 import org.terasology.entitySystem.orientdb.types.ListTypeHandler;
 import org.terasology.entitySystem.orientdb.types.MappedContainerTypeHandler;
 import org.terasology.entitySystem.orientdb.types.SimpleTypeHandler;
+import org.terasology.performanceMonitor.PerformanceMonitor;
 
+import javax.sql.rowset.Joinable;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
@@ -103,7 +115,7 @@ public class OrientDBEntityManager implements EntityManager {
         }
         db.close();
         pool = new OGraphDatabasePool();
-        pool.setup(1, 10);
+        pool.setup();
 
         localDatabase.set(pool.acquire(dbLocation, dbUsername, dbPassword));
 
@@ -128,6 +140,9 @@ public class OrientDBEntityManager implements EntityManager {
         customTypeHandlers.put(Byte.class, simpleTypeHandler);
         customTypeHandlers.put(BigDecimal.class, simpleTypeHandler);
     }
+
+    public void init() {
+    }
     
     public void dumpDB(String file) throws IOException {
 
@@ -140,7 +155,6 @@ public class OrientDBEntityManager implements EntityManager {
     }
 
     public void setCacheEnabled(boolean enabled) {
-        getDB().getLevel1Cache().setEnable(enabled);
         getDB().getLevel2Cache().setEnable(enabled);
     }
 
@@ -148,6 +162,23 @@ public class OrientDBEntityManager implements EntityManager {
         OGraphDatabase db = getDB();
         if (db.getVertexType(getComponentVertexType(componentClass)) == null) {
             db.createVertexType(getComponentVertexType(componentClass), ComponentVertexType);
+            OClass entityType = db.getVertexType(EntityVertexType);
+            if (entityType.getProperty(getComponentVertexType(componentClass)) == null) {
+                entityType.createProperty(getComponentVertexType(componentClass), OType.BOOLEAN);
+            }
+            OIndexManager indexManager = db.getMetadata().getIndexManager();
+            OIndex index = indexManager.getIndex(getComponentVertexType(componentClass));
+            if (index == null) {
+                StringBuilder indexStringBuilder = new StringBuilder();
+                indexStringBuilder.append("CREATE INDEX ");
+                indexStringBuilder.append(getComponentVertexType(componentClass));
+                indexStringBuilder.append(" ON ");
+                indexStringBuilder.append(EntityVertexType);
+                indexStringBuilder.append("(");
+                indexStringBuilder.append(getComponentVertexType(componentClass));
+                indexStringBuilder.append(") nonunique");
+                db.command(new OCommandSQL(indexStringBuilder.toString()));
+            }
             db.getMetadata().getSchema().save();
         }
         registeredComponents.put(getComponentVertexType(componentClass), componentClass);
@@ -166,6 +197,9 @@ public class OrientDBEntityManager implements EntityManager {
             }
         }
         componentSerializationLookup.put(componentClass, info);
+    }
+
+    public void dispose() {
     }
 
     private boolean isRelationshipField(Field field) {
@@ -239,21 +273,23 @@ public class OrientDBEntityManager implements EntityManager {
 
         ODocument entity = db.load(entityId);
         if (entity != null) {
-            boolean componentUpdate = true;
-            ODocument componentDoc = findComponentOfEntity(entity, component.getClass());
-            if (componentDoc == null) {
+            boolean hasComponent = entity.containsField(getComponentVertexType(component));
+            ODocument componentDoc = null;
+            if (hasComponent) {
+                componentDoc = findComponentOfEntity(entity, component.getClass());
+            }
+            else {
                 componentDoc = db.createVertex(getComponentVertexType(component));
                 componentDoc.field(OGraphDatabase.LABEL, getComponentVertexType(component));
-                componentUpdate = false;
             }
-            serializeComponent(componentDoc, component);
-            if (!componentUpdate) {
+            if (!hasComponent) {
+                entity.field(getComponentVertexType(component), true);
                 ODocument edge = db.createEdge(entity, componentDoc, OwnsEdgeType);
                 edge.field(OGraphDatabase.LABEL, getComponentVertexType(component));
-                edge.save();
             }
+            serializeComponent(componentDoc, component);
             if (eventSystem != null) {
-                if (componentUpdate) {
+                if (hasComponent) {
                     eventSystem.send(getEntityRef(entityId), ChangedComponentEvent.newInstance(), component);
                 } else {
                     eventSystem.send(getEntityRef(entityId), AddComponentEvent.newInstance(), component);
@@ -264,14 +300,18 @@ public class OrientDBEntityManager implements EntityManager {
     }
 
     public <T extends Component> T getComponent(ORID entityId, Class<T> componentClass) {
+        PerformanceMonitor.startActivity("getComponent");
         OGraphDatabase db = getDB();
         ODocument entity = db.load(entityId);
         if (entity != null) {
             ODocument componentDoc = findComponentOfEntity(entity, componentClass);
             if (componentDoc != null) {
-                return deserializeComponent(componentDoc, componentClass);
+                T result =  deserializeComponent(componentDoc, componentClass);
+                PerformanceMonitor.endActivity();
+                return result;
             }
         }
+        PerformanceMonitor.endActivity();
         return null;
     }
 
@@ -314,6 +354,7 @@ public class OrientDBEntityManager implements EntityManager {
                 if (eventSystem != null) {
                     eventSystem.send(getEntityRef(entityId), RemovedComponentEvent.newInstance(), deserializeComponent(componentDoc, componentClass));
                 }
+                componentDoc.removeField(getComponentVertexType(componentClass));
                 db.removeVertex(componentDoc);
             }
         }
@@ -324,7 +365,7 @@ public class OrientDBEntityManager implements EntityManager {
         ODocument entity = db.load(entityId);
         if (entity == null)
             return;
-        
+
         ODocument componentDoc = findComponentOfEntity(entity, component.getClass());
         if (componentDoc == null)
             return;
@@ -408,6 +449,7 @@ public class OrientDBEntityManager implements EntityManager {
     }
 
     private <T extends Component> T deserializeComponent(ODocument componentDoc, Class<T> componentClass) {
+        PerformanceMonitor.startActivity("deserializeComponent");
         SerializationInfo info = componentSerializationLookup.get(componentClass);
         try {
             T component = componentClass.newInstance();
@@ -431,15 +473,17 @@ public class OrientDBEntityManager implements EntityManager {
                     }
                 }
             }
+            PerformanceMonitor.endActivity();
             return component;
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to deserialize component: " + componentDoc.toJSON(), e);
         }
-
+        PerformanceMonitor.endActivity();
         return null;
     }
 
     private <T extends Component> void serializeComponent(ODocument componentDoc, T component) {
+        PerformanceMonitor.startActivity("serializeComponent");
         OGraphDatabase db = getDB();
         if (component == null || componentDoc == null) return;
         try {
@@ -449,7 +493,9 @@ public class OrientDBEntityManager implements EntityManager {
                 Object serializedValue = fieldInfo.serializationHandler.serialize(value);
                 componentDoc.field(fieldInfo.field.getName(), serializedValue);
             }
+            PerformanceMonitor.startActivity("saveDoc");
             componentDoc.save();
+            PerformanceMonitor.endActivity();
 
             for (RelationshipInfo relationship : info.relationships) {
                 if (relationship.isList) {
@@ -460,9 +506,11 @@ public class OrientDBEntityManager implements EntityManager {
                     setReference(componentDoc, ref, relationship.field.getName());
                 }
             }
+
         } catch (IllegalAccessException e) {
             logger.log(Level.SEVERE, "Error serializing component: " + component, e);
         }
+        PerformanceMonitor.endActivity();
     }
     
     public EntityRef getReference(ODocument component, String label) {
@@ -631,7 +679,7 @@ public class OrientDBEntityManager implements EntityManager {
 
             // TODO: Explore prepared queries and native queries
             query = new OSQLSynchQuery<ODocument>("select * from " + getComponentVertexType(componentClass) + " where @rid > ? LIMIT 1");
-        }
+            }
 
         // TODO: Wasteful to do the query and throw away the result? But need to check to ensure the next item is still available
         public boolean hasNext() {
@@ -660,35 +708,39 @@ public class OrientDBEntityManager implements EntityManager {
     private class EntityWithComponentsIterator implements Iterator<EntityRef> {
 
         private OSQLSynchQuery<ODocument> query;
-        private ORID last = new ORecordId();
+        Iterator<ODocument> iterator;
+
 
         public EntityWithComponentsIterator(Class<? extends Component> ... componentClasses) {
+            PerformanceMonitor.startActivity("IterateEntities");
+            PerformanceMonitor.startActivity("BuildQuery");
             // TODO: Explore alternative mechanisms
             StringBuilder queryStringBuilder = new StringBuilder();
             queryStringBuilder.append("select * from " + EntityVertexType);
             if (componentClasses.length > 0) {
                 queryStringBuilder.append(" WHERE");
             }
+            boolean first = true;
             for (Class<? extends Component> componentClass : componentClasses) {
-                queryStringBuilder.append(" out CONTAINS (label = '" + getComponentVertexType(componentClass) + "') and");
+                if (!first) {
+                    queryStringBuilder.append(" and");
+                }
+                first = false;
+                queryStringBuilder.append(" " + getComponentVertexType(componentClass) + " = true");
             }
-            queryStringBuilder.append(" @rid > ? LIMIT 1");
             query = new OSQLSynchQuery<ODocument>(queryStringBuilder.toString());
+            iterator = getDB().<List<ODocument>>query(query).iterator();
+            PerformanceMonitor.endActivity();
+            PerformanceMonitor.endActivity();
         }
 
         public boolean hasNext() {
-            query.resetPagination();
-            return !getDB().query(query, last).isEmpty();
+            return iterator.hasNext();
         }
 
         public EntityRef next() {
-            query.resetPagination();
-            List<ODocument> result = getDB().query(query, last);
-            if (!result.isEmpty()) {
-                last = result.get(0).getIdentity();
-                return getEntityRef(result.get(0));
-            }
-            return null;
+            EntityRef result = getEntityRef(iterator.next());
+            return result;
         }
 
         public void remove() {

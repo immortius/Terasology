@@ -72,6 +72,8 @@ public class BlockParticleEmitterSystem implements UpdateSubscriberSystem, Rende
 
             if (particleEffect.particles.size() == 0 && particleEffect.destroyEntityOnCompletion) {
                 entity.destroy();
+            } else {
+                entity.saveComponent(particleEffect);
             }
         }
     }

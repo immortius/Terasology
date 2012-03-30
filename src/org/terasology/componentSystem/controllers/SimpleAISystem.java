@@ -62,11 +62,9 @@ public class SimpleAISystem implements EventHandlerSystem, UpdateSubscriberSyste
                 targetDirection.sub(ai.movementTarget, worldPos);
                 targetDirection.normalize();
                 moveComp.setDrive(targetDirection);
-
-                float yaw = (float)Math.atan2(targetDirection.x, targetDirection.z);
-                AxisAngle4f axisAngle = new AxisAngle4f(0,1,0,yaw);
-                location.getLocalRotation().set(axisAngle);
+                entity.saveComponent(ai);
             }
+            entity.saveComponent(moveComp);
         }
     }
 

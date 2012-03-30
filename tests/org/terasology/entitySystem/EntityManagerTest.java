@@ -8,6 +8,7 @@ import org.terasology.entitySystem.event.RemovedComponentEvent;
 import org.terasology.entitySystem.stubs.IntegerComponent;
 import org.terasology.entitySystem.stubs.StringComponent;
 
+import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,9 @@ public abstract class EntityManagerTest {
     public void destroyingEntityDestroysComponents() {
         EntityRef entity = entityManager.create();
 
+        assertEquals(0, entityManager.getComponentCount(StringComponent.class));
+        assertEquals(0, entityManager.getComponentCount(IntegerComponent.class));
+
         entity.addComponent(new StringComponent());
         entity.addComponent(new IntegerComponent());
         entity.destroy();
@@ -104,11 +108,11 @@ public abstract class EntityManagerTest {
         EntityRef entity = entityManager.create();
         StringComponent comp = new StringComponent();
         entity.addComponent(comp);
+        
+        List<Map.Entry<EntityRef, StringComponent>> expected = Lists.newArrayList();
+        expected.add(new AbstractMap.SimpleEntry(entity, comp));
 
-        for (Map.Entry<EntityRef, StringComponent> item : entityManager.iterateComponents(StringComponent.class)) {
-            assertEquals(entity, item.getKey());
-            assertEquals(comp, item.getValue());
-        }
+        assertEquals(expected, Lists.newArrayList(entityManager.iterateComponents(StringComponent.class)));
     }
 
     @Test
