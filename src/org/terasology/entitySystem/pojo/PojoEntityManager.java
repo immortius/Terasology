@@ -12,6 +12,7 @@ import org.terasology.entitySystem.common.NullIterator;
 import org.terasology.entitySystem.event.AddComponentEvent;
 import org.terasology.entitySystem.event.ChangedComponentEvent;
 import org.terasology.entitySystem.event.RemovedComponentEvent;
+import org.terasology.performanceMonitor.PerformanceMonitor;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -117,30 +118,36 @@ public class PojoEntityManager implements EntityManager {
     }
 
     public Iterable<EntityRef> iteratorEntities(Class<? extends Component>... componentClasses) {
-        if (componentClasses.length == 0) {
-            return NullIterator.newInstance();
-        }
-        TLongList idList = new TLongArrayList();
-        TLongObjectIterator<? extends Component> primeIterator = store.componentIterator(componentClasses[0]);
-        if (primeIterator == null) {
-            return NullIterator.newInstance();
-        }
+        PerformanceMonitor.startActivity("Iterate Entities");
+        try {
+            if (componentClasses.length == 0) {
+                return NullIterator.newInstance();
+            }
+            TLongList idList = new TLongArrayList();
+            TLongObjectIterator<? extends Component> primeIterator = store.componentIterator(componentClasses[0]);
+            if (primeIterator == null) {
+                return NullIterator.newInstance();
+            }
 
-        while (primeIterator.hasNext()) {
-            primeIterator.advance();
-            long id = primeIterator.key();
-            boolean discard = false;
-            for (int i = 1; i < componentClasses.length; ++i) {
-                if (store.get(id, componentClasses[i]) == null) {
-                    discard = true;
-                    break;
+            while (primeIterator.hasNext()) {
+                primeIterator.advance();
+                long id = primeIterator.key();
+                boolean discard = false;
+                for (int i = 1; i < componentClasses.length; ++i) {
+                    if (store.get(id, componentClasses[i]) == null) {
+                        discard = true;
+                        break;
+                    }
+                }
+                if (!discard) {
+                    idList.add(primeIterator.key());
                 }
             }
-            if (!discard) {
-                idList.add(primeIterator.key());
-            }
+            return new EntityIterable(idList);
         }
-        return new EntityIterable(idList);
+        finally {
+            PerformanceMonitor.endActivity();
+        }
     }
 
     public boolean hasComponent(long entityId, Class<? extends Component> componentClass) {

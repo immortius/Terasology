@@ -3,6 +3,7 @@ package org.terasology.entitySystem.orientdbobject;
 import com.google.common.collect.*;
 import com.orientechnologies.orient.core.command.OCommandOutputListener;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
+import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabase;
 import com.orientechnologies.orient.core.db.graph.OGraphDatabasePool;
 import com.orientechnologies.orient.core.db.object.ODatabaseObject;
@@ -75,6 +76,7 @@ public class OrientDBObjEntityManager implements EntityManager {
     
     public OrientDBObjEntityManager(String location, String username, String password) {
         OGlobalConfiguration.OBJECT_SAVE_ONLY_DIRTY.setValue(true);
+        OGlobalConfiguration.ENVIRONMENT_CONCURRENT.setValue(false);
         instance = this;
         this.dbLocation = location;
         this.dbUsername = username;
@@ -88,16 +90,11 @@ public class OrientDBObjEntityManager implements EntityManager {
         pool.setup();
 
         localDatabase.set(pool.acquire(dbLocation, dbUsername, dbPassword));
+        ODatabaseRecordThreadLocal.INSTANCE.set(localDatabase.get().getUnderlying());
+        index = getDB().getMetadata().getIndexManager().getIndex("ENTITY_COMPONENTS_LOOKUP");
 
         serializerContext = new OObjectSerializerContext();
         OObjectSerializerHelper.bindSerializerContext(null, serializerContext);
-
-        OIndexManager indexManager = db.getMetadata().getIndexManager();
-        index = indexManager.getIndex("ENTITY_COMPONENTS_LOOKUP");
-        if (index == null) {
-            db.command(new OCommandSQL("CREATE INDEX ENTITY_COMPONENTS_LOOKUP notunique"));
-            index = indexManager.getIndex("ENTITY_COMPONENTS_LOOKUP");
-        }
 
     }
 
@@ -177,28 +174,40 @@ public class OrientDBObjEntityManager implements EntityManager {
     }
 
     public Iterable<EntityRef> iteratorEntities(final Class<? extends Component>... componentClasses) {
-        PerformanceMonitor.startActivity("Iterate Entities - Build");
-        // TODO: Make prepared query
-        StringBuilder queryStringBuilder = new StringBuilder();
-        queryStringBuilder.append("select * from " + OrientDBObjEntityRef.class.getSimpleName());
-        if (componentClasses.length > 0) {
-            queryStringBuilder.append(" WHERE");
-        }
-        boolean first = true;
-        for (Class<? extends Component> componentClass : componentClasses) {
-            if (!first) {
-                queryStringBuilder.append(" and");
+        PerformanceMonitor.startActivity("Iterate Entities");
+        try {
+            if (componentClasses == null || componentClasses.length == 0) {
+                // TODO: Iterate all entities?
+                return NullIterator.newInstance();
             }
-        first = false;
-        queryStringBuilder.append(" componentTypes IN ['" + componentClass.getSimpleName() + "']");
-        }
-        PerformanceMonitor.endActivity();
+            // TODO: Make prepared query
+            StringBuilder queryStringBuilder = new StringBuilder();
+            queryStringBuilder.append("select from OrientDBObjEntityRef WHERE components containskey '");
+            queryStringBuilder.append(componentClasses[0].getSimpleName());
+            queryStringBuilder.append("'");
 
-        PerformanceMonitor.startActivity("Iterate Entities - Query");
-        OSQLSynchQuery<EntityRef> query = new OSQLSynchQuery(queryStringBuilder.toString());
-        Iterable<EntityRef> result = getDB().<List<EntityRef>>query(query);
-        PerformanceMonitor.endActivity();
-        return result;
+            OSQLSynchQuery<EntityRef> query = new OSQLSynchQuery(queryStringBuilder.toString());
+
+            Iterable<EntityRef> result = getDB().<List<EntityRef>>query(query);
+            List<EntityRef> processedResult = Lists.newArrayList();
+            if (componentClasses.length > 1) {
+                for (EntityRef entity : result) {
+                    boolean ok = true;
+                    for (int i = 1; ok && i < componentClasses.length; ++i) {
+                        ok = entity.hasComponent(componentClasses[i]);
+                    }
+                    if (ok) {
+                        processedResult.add(entity);
+                    }
+                }
+                return processedResult;
+            } else {
+                return result;
+            }
+        }
+        finally {
+            PerformanceMonitor.endActivity();
+        }
     }
 
     public EventSystem getEventSystem() {
@@ -212,8 +221,12 @@ public class OrientDBObjEntityManager implements EntityManager {
     private void createDatabase(ODatabaseObject db) {
         db.create();
         db.getEntityManager().registerEntityClass(OrientDBObjEntityRef.class);
-        db.getMetadata().getSchema().getClass(OrientDBObjEntityRef.class);
+        OClass entityClass = db.getMetadata().getSchema().getClass(OrientDBObjEntityRef.class);
+        entityClass.createProperty("components", OType.LINKMAP);
         db.getMetadata().getSchema().save();
+
+        OIndexManager indexManager = db.getMetadata().getIndexManager();
+        db.command(new OCommandSQL("CREATE INDEX ENTITY_COMPONENTS_LOOKUP ON OrientDBObjEntityRef(components by key) notunique")).execute();
 
         OSecurity securityManager = db.getMetadata().getSecurity();
         if (!"admin".equals(dbUsername)) {
@@ -239,10 +252,8 @@ public class OrientDBObjEntityManager implements EntityManager {
     public static class OrientDBObjEntityRef implements EntityRef {
         @Id
         private Object id;
-        
-        // TODO: Replaced with specialised class that allows lookup by class, but serializes to a list
-        private List<Component> components = Lists.newArrayList();
-        private Set<String> componentTypes = Sets.newHashSet();
+
+        private Map<String, Component> components = Maps.newHashMap();
 
         public boolean exists() {
             return id != null && ((ORID)id).isValid();
@@ -250,12 +261,7 @@ public class OrientDBObjEntityManager implements EntityManager {
 
         public <T extends Component> T getComponent(Class<T> componentClass) {
             if (!exists()) return null;
-            for (Component c : components) {
-                if (componentClass == c.getClass()) {
-                    return componentClass.cast(c);
-                }
-            }
-            return null;
+            return componentClass.cast(components.get(componentClass.getSimpleName()));
         }
 
         public <T extends Component> T addComponent(T component) {
@@ -263,28 +269,22 @@ public class OrientDBObjEntityManager implements EntityManager {
             try {
                 if (!exists()) return component;
                 boolean update = false;
-                if (!componentTypes.add(component.getClass().getSimpleName())) {
-                    Iterator<Component> iterator = components.iterator();
-                    while (iterator.hasNext()) {
-                        Component c = iterator.next();
-                        if (component.getClass() == c.getClass()) {
-                            if (c.equals(component)) {
-                                entityManager().getDB().save(component);
-                                if (entityManager().getEventSystem() != null) {
-                                    entityManager().getEventSystem().send(this, ChangedComponentEvent.newInstance(), component);
-                                }
-                                return component;
-                            } else {
-                                iterator.remove();
-                                entityManager().getDB().delete(c);
-                                update = true;
-                                break;
-                            }
-                        }
+                Component existingComponent = components.get(component.getClass().getSimpleName());
+                if (existingComponent == component) {
+                    entityManager().dirtyComponent(component);
+                    if (entityManager().getEventSystem() != null) {
+                        entityManager().getEventSystem().send(this, ChangedComponentEvent.newInstance(), component);
                     }
+                    return component;
                 }
-                components.add(component);
+                else if (existingComponent != null) {
+                    components.remove(component.getClass().getSimpleName());
+                    entityManager().getDB().delete(existingComponent);
+                    update = true;
+                }
+                components.put(component.getClass().getSimpleName(), component);
                 entityManager().getDB().setDirty(this);
+                
                 // TODO: If component exists, dirty it. (actually, move save into component?)
                 entityManager().getDB().save(this);
                 if (update) {
@@ -308,21 +308,15 @@ public class OrientDBObjEntityManager implements EntityManager {
             try
             {
                 if (!exists()) return;
-                if (componentTypes.remove(componentClass.getSimpleName())) {
-                    Iterator<Component> iterator = components.iterator();
-                    while (iterator.hasNext()) {
-                        Component c = iterator.next();
-                        if (componentClass == c.getClass()) {
-                            if (entityManager().getEventSystem() != null) {
-                                entityManager().getEventSystem().send(this, RemovedComponentEvent.newInstance(), c);
-                            }
-                            iterator.remove();
-                            entityManager().getDB().delete(c);
-                            entityManager().getDB().setDirty(this);
-                            entityManager().getDB().save(this);
-                            break;
-                        }
+                Component component = components.get(componentClass.getSimpleName());
+                if (component != null) {
+                    if (entityManager().getEventSystem() != null) {
+                        entityManager().getEventSystem().send(this, RemovedComponentEvent.newInstance(), component);
                     }
+                    components.remove(componentClass.getSimpleName());
+                    entityManager().getDB().delete(component);
+                    entityManager().getDB().setDirty(this);
+                    entityManager().getDB().save(this);
                 }
             }
             finally {
@@ -344,7 +338,7 @@ public class OrientDBObjEntityManager implements EntityManager {
 
         public Iterable<Component> iterateComponents() {
             if (!exists()) return NullIterator.newInstance();
-            return components;
+            return components.values();
         }
 
         public void destroy() {
@@ -352,7 +346,7 @@ public class OrientDBObjEntityManager implements EntityManager {
                 if (entityManager().getEventSystem() != null) {
                     entityManager().getEventSystem().send(this, RemovedComponentEvent.newInstance());
                 }
-                for (Component component : components) {
+                for (Component component : components.values()) {
                     entityManager().getDB().delete(component);
                 }
                 components.clear();
@@ -371,12 +365,7 @@ public class OrientDBObjEntityManager implements EntityManager {
 
         public boolean hasComponent(Class<? extends Component> componentClass) {
             if (!exists()) return false;
-            for (Component c : components) {
-                if (componentClass == c.getClass()) {
-                    return true;
-                }
-            }
-            return false;
+            return components.containsKey(componentClass.getSimpleName());
         }
 
         @Override

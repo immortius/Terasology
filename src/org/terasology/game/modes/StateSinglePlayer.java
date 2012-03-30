@@ -124,6 +124,8 @@ public class StateSinglePlayer implements IGameState {
         _guiScreens.add(_inventoryScreen);
         _guiScreens.add(_statusScreen);
 
+        //PojoEntityManager entityManager = new PojoEntityManager();
+
         OrientDBObjEntityManager entityManager = new OrientDBObjEntityManager("memory:test", "admin", "admin");
         entityManager.registerValueSerializer(new BlockGroupSerializer());
         entityManager.registerValueSerializer(new Color4fSerializer());
@@ -132,6 +134,16 @@ public class StateSinglePlayer implements IGameState {
         entityManager.registerValueSerializer(new Vector3fSerializer());
         entityManager.registerValueSerializer(new Vector2fSerializer());
         entityManager.registerValueSerializer(new Vector3iSerializer());
+
+        /*OrientDBEntityManager entityManager = new OrientDBEntityManager("memory:test", "admin", "admin");
+        
+        entityManager.registerValueTypeHandler(BlockGroup.class, new BlockGroupTypeHandler());
+        entityManager.registerValueTypeHandler(Color4f.class, new Color4fTypeHandler());
+        entityManager.registerValueTypeHandler(Quat4f.class, new Quat4fTypeHandler());
+        entityManager.registerValueTypeHandler(Sound.class, new SoundTypeHandler(AudioManager.getInstance()));
+        entityManager.registerValueTypeHandler(Vector3f.class, new Vector3fTypeHandler());
+        entityManager.registerValueTypeHandler(Vector2f.class, new Vector2fTypeHandler());
+        entityManager.registerValueTypeHandler(Vector3i.class, new Vector3iTypeHandler());*/
 
         // TODO: Use reflection pending mod support
         entityManager.registerComponentType(ExplosionActionComponent.class);

@@ -314,7 +314,7 @@ public class LocalPlayerSystem implements UpdateSubscriberSystem, RenderSystem, 
 
         EntityRef selectedItemEntity = inventory.itemSlots.get(localPlayerComp.selectedTool);
         if (Mouse.isButtonDown(0) || button == 0) {
-            if (selectedItemEntity != null) {
+            if (selectedItemEntity != null && selectedItemEntity.exists()) {
                 ItemComponent item = selectedItemEntity.getComponent(ItemComponent.class);
                 switch (item.usage) {
                     case OnBlock:
