@@ -210,6 +210,7 @@ public class GroovyManager {
         }
 
         public void dumpDB() throws IOException {
+            ((OrientDBObjEntityManager)CoreRegistry.get(EntityManager.class)).saveChanges();
             ((OrientDBObjEntityManager)CoreRegistry.get(EntityManager.class)).dumpDB("Test");
         }
         

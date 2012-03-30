@@ -208,6 +208,7 @@ public class StateSinglePlayer implements IGameState {
             PerformanceMonitor.startActivity(updater.getClass().getSimpleName());
             updater.update((float) delta);
         }
+        ((OrientDBObjEntityManager)_entityManager).saveImmediateChanges();
 
         if (_worldRenderer != null && shouldUpdateWorld())
             _worldRenderer.update(delta);

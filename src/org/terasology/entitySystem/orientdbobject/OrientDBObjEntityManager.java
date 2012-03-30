@@ -28,6 +28,7 @@ import com.orientechnologies.orient.core.serialization.serializer.object.OObject
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import com.orientechnologies.orient.core.type.tree.OMVRBTreeRIDSet;
+import org.terasology.components.LocationComponent;
 import org.terasology.entitySystem.*;
 import org.terasology.entitySystem.common.NullIterator;
 import org.terasology.entitySystem.event.AddComponentEvent;
@@ -68,6 +69,9 @@ public class OrientDBObjEntityManager implements EntityManager {
     public ThreadLocal<ODatabaseObjectTx> localDatabase = new ThreadLocal<ODatabaseObjectTx>();
 
     private OObjectSerializerContext serializerContext;
+    private Set<Component> immediatePendingSave = Collections.newSetFromMap(new IdentityHashMap<Component, Boolean>());
+    private Set<Component> pendingSave = Collections.newSetFromMap(new IdentityHashMap<Component, Boolean>());
+    private OIndex index;
     
     public OrientDBObjEntityManager(String location, String username, String password) {
         OGlobalConfiguration.OBJECT_SAVE_ONLY_DIRTY.setValue(true);
@@ -87,11 +91,46 @@ public class OrientDBObjEntityManager implements EntityManager {
 
         serializerContext = new OObjectSerializerContext();
         OObjectSerializerHelper.bindSerializerContext(null, serializerContext);
+
+        OIndexManager indexManager = db.getMetadata().getIndexManager();
+        index = indexManager.getIndex("ENTITY_COMPONENTS_LOOKUP");
+        if (index == null) {
+            db.command(new OCommandSQL("CREATE INDEX ENTITY_COMPONENTS_LOOKUP notunique"));
+            index = indexManager.getIndex("ENTITY_COMPONENTS_LOOKUP");
+        }
+
+    }
+
+    OIndex getEntityIndex() {
+        return index;
     }
 
     public void dispose() {
         getDB().close();
         pool.close();
+    }
+
+    public void dirtyComponent(Component comp) {
+        getDB().setDirty(comp);
+        if (comp.getClass().equals(LocationComponent.class)) {
+            immediatePendingSave.add(comp);
+        } else {
+            pendingSave.add(comp);
+        }
+    }
+
+    public void saveImmediateChanges() {
+        for (Component comp : immediatePendingSave) {
+            getDB().save(comp);
+        }
+        immediatePendingSave.clear();
+    }
+
+    public void saveChanges() {
+        for (Component comp : pendingSave) {
+            getDB().save(comp);
+        }
+        pendingSave.clear();
     }
 
     public void dumpDB(String file) throws IOException {
@@ -101,6 +140,8 @@ public class OrientDBObjEntityManager implements EntityManager {
         });
         exporter.exportDatabase();
         exporter.close();
+        getDB().getLevel1Cache().setEnable(true);
+        getDB().getLevel2Cache().setEnable(true);
     }
 
     public void setCacheEnabled(boolean enabled) {
@@ -136,7 +177,7 @@ public class OrientDBObjEntityManager implements EntityManager {
     }
 
     public Iterable<EntityRef> iteratorEntities(final Class<? extends Component>... componentClasses) {
-        PerformanceMonitor.startActivity("Iterate Entities");
+        PerformanceMonitor.startActivity("Iterate Entities - Build");
         // TODO: Make prepared query
         StringBuilder queryStringBuilder = new StringBuilder();
         queryStringBuilder.append("select * from " + OrientDBObjEntityRef.class.getSimpleName());
@@ -151,8 +192,11 @@ public class OrientDBObjEntityManager implements EntityManager {
         first = false;
         queryStringBuilder.append(" componentTypes IN ['" + componentClass.getSimpleName() + "']");
         }
+        PerformanceMonitor.endActivity();
 
-        Iterable<EntityRef> result = getDB().<List<EntityRef>>query(new OSQLSynchQuery<ODocument>(queryStringBuilder.toString()));
+        PerformanceMonitor.startActivity("Iterate Entities - Query");
+        OSQLSynchQuery<EntityRef> query = new OSQLSynchQuery(queryStringBuilder.toString());
+        Iterable<EntityRef> result = getDB().<List<EntityRef>>query(query);
         PerformanceMonitor.endActivity();
         return result;
     }
@@ -170,20 +214,6 @@ public class OrientDBObjEntityManager implements EntityManager {
         db.getEntityManager().registerEntityClass(OrientDBObjEntityRef.class);
         db.getMetadata().getSchema().getClass(OrientDBObjEntityRef.class);
         db.getMetadata().getSchema().save();
-
-        OIndexManager indexManager = db.getMetadata().getIndexManager();
-        OIndex index = indexManager.getIndex("ENTITY_COMPONENTS_LOOKUP");
-        if (index == null) {
-            StringBuilder indexStringBuilder = new StringBuilder();
-            indexStringBuilder.append("CREATE INDEX ");
-            indexStringBuilder.append("ENTITY_COMPONENTS_LOOKUP");
-            indexStringBuilder.append(" ON ");
-            indexStringBuilder.append(OrientDBObjEntityRef.class.getSimpleName());
-            indexStringBuilder.append("(");
-            indexStringBuilder.append("componentTypes");
-            indexStringBuilder.append(") nonunique");
-            db.command(new OCommandSQL(indexStringBuilder.toString()));
-        }
 
         OSecurity securityManager = db.getMetadata().getSecurity();
         if (!"admin".equals(dbUsername)) {
@@ -255,7 +285,7 @@ public class OrientDBObjEntityManager implements EntityManager {
                 }
                 components.add(component);
                 entityManager().getDB().setDirty(this);
-                // TODO: If component exists, dirty it. (actually, move save into component)
+                // TODO: If component exists, dirty it. (actually, move save into component?)
                 entityManager().getDB().save(this);
                 if (update) {
                     if (entityManager().getEventSystem() != null) {
@@ -304,8 +334,7 @@ public class OrientDBObjEntityManager implements EntityManager {
 
             if (!exists()) return;
             PerformanceMonitor.startActivity("Save Component");
-            entityManager().getDB().setDirty(component);
-            entityManager().getDB().save(component);
+            entityManager().dirtyComponent(component);
             PerformanceMonitor.endActivity();
             if (entityManager().getEventSystem() != null) {
                 entityManager().getEventSystem().send(this, ChangedComponentEvent.newInstance(), component);
