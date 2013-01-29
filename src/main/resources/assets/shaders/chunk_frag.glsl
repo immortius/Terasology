@@ -189,18 +189,17 @@ void main(){
     daylightColorValue.xyz *= daylightScaledValue + (NIGHT_BRIGHTNESS * (1.0 - daylight) * expLightValue(daylightValue));
 
     // Calculate the final block light brightness
-    float blockBrightness = (expLightValue(blocklightValue) + diffuseLighting * blocklightValue * BLOCK_DIFF);
+    float blockBrightness = expLightValue(blocklightValue);
 
     torchlight -= flickeringLightOffset * torchlight;
 
     blockBrightness += (1.0 - blockBrightness) * torchlight;
     blockBrightness -= flickeringLightOffset * blocklightValue;
-    blockBrightness *= blocklightDayIntensity;
 
     // Calculate the final blocklight color value and add a slight reddish tint to it
     vec3 blocklightColorValue = vec3(blockBrightness) * vec3(1.0, 0.95, 0.94);
 
     // Apply the final lighting mix
-    color.xyz *= (daylightColorValue + blocklightColorValue) * occlusionValue;
+    color.xyz *= max(daylightColorValue, blocklightColorValue) * occlusionValue;
     gl_FragColor = color;
 }
