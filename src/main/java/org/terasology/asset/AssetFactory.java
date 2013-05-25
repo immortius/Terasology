@@ -13,21 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.audio.openAL;
 
+package org.terasology.asset;
 
-public class BasicStreamingSoundPool extends BasicSoundPool {
+/**
+ *
+ */
+public interface AssetFactory<DATA_TYPE extends AssetData, ASSET_TYPE extends Asset<DATA_TYPE>> {
 
-    public BasicStreamingSoundPool(int capacity) {
-        super(capacity);
-    }
-
-    public BasicStreamingSoundPool() {
-        super();
-    }
-
-    @Override
-    protected SoundSource createSoundSource() {
-        return new BasicStreamingSoundSource(this);
-    }
+    ASSET_TYPE buildAsset(AssetUri uri, DATA_TYPE data);
 }

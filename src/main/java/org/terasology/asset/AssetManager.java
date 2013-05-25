@@ -25,11 +25,7 @@ import org.terasology.logic.mod.ModManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.EnumMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 // TODO: Split out static methods to an Assets static class
 // TODO: Split out an interface, possibly two with one for loading and adding assets, the other with disposal and other more management methods
@@ -51,8 +47,13 @@ public class AssetManager {
     private EnumMap<AssetType, Map<String, AssetLoader>> assetLoaders = Maps.newEnumMap(AssetType.class);
     private Map<AssetUri, Asset> assetCache = Maps.newHashMap();
     private Map<AssetUri, AssetSource> overrides = Maps.newHashMap();
+    private Map<AssetType, AssetFactory> factories = Maps.newHashMap();
 
     protected AssetManager() {
+    }
+
+    public void setAssetFactory(AssetType type, AssetFactory factory) {
+        factories.put(type, factory);
     }
 
     // Static syntax sugar
@@ -94,6 +95,12 @@ public class AssetManager {
 
         if (!uri.isValid()) return null;
 
+        AssetFactory factory = factories.get(uri.getAssetType());
+        if (factory == null) {
+            logger.error("No asset factory set for assets of type {}", uri.getAssetType());
+            return null;
+        }
+
         Asset asset = assetCache.get(uri);
         if (asset != null) return asset;
 
@@ -121,7 +128,11 @@ public class AssetManager {
                 stream = url.openStream();
                 urls.remove(url);
                 urls.add(0, url);
-                asset = loader.load(uri, stream, urls);
+
+                AssetData data = loader.load(uri, stream, urls);
+                if (data != null) {
+                    asset = factory.buildAsset(uri, data);
+                }
                 if (asset != null) {
                     assetCache.put(uri, asset);
                 }

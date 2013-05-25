@@ -15,6 +15,7 @@
  */
 package org.terasology.audio;
 
+import org.terasology.asset.AssetFactory;
 import org.terasology.asset.AssetUri;
 
 import javax.vecmath.Quat4f;
@@ -71,20 +72,8 @@ public interface AudioManager {
 
     void stopAllSounds();
 
-    /**
-     * For internal use, loads a streaming sound
-     *
-     * @param uri
-     * @param urls
-     * @return
-     */
-    Sound loadStreamingSound(AssetUri uri, List<URL> urls);
+    AssetFactory<SoundData, StaticSound> getStaticSoundFactory();
 
-    /**
-     * For internal use, loads a sound
-     *
-     * @param uri
-     * @param stream
-     */
-    Sound loadSound(AssetUri uri, InputStream stream) throws IOException;
+    AssetFactory<StreamingSoundData, StreamingSound> getStreamingSoundFactory();
+
 }

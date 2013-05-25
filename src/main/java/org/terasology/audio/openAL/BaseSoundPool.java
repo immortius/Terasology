@@ -13,30 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.terasology.audio.openAL;
 
+import com.google.common.collect.Maps;
 import org.terasology.audio.AudioManager;
 import org.terasology.audio.Sound;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class BasicSoundPool implements SoundPool {
+/**
+ *
+ */
+public abstract class BaseSoundPool implements SoundPool {
+
     private final static int DEFAULT_POOL_SIZE = 32;
 
     private float volume;
 
     protected Map<SoundSource, Integer> soundSources;
 
-    public BasicSoundPool(int capacity) {
-        soundSources = new HashMap<SoundSource, Integer>(capacity);
+    public BaseSoundPool(int capacity) {
+        soundSources = Maps.newHashMapWithExpectedSize(capacity);
 
         this.fillPool(capacity);
     }
 
-    public BasicSoundPool() {
+    public BaseSoundPool() {
         this(DEFAULT_POOL_SIZE);
     }
 
@@ -169,13 +174,12 @@ public class BasicSoundPool implements SoundPool {
         return isLocked(source) || source.isPlaying();
     }
 
-    protected SoundSource createSoundSource() {
-        return new BasicSoundSource(this);
-    }
+    protected abstract SoundSource createSoundSource();
 
     private void fillPool(int capacity) {
         for (int i = 0; i < capacity; i++) {
             this.soundSources.put(createSoundSource(), null);
         }
     }
+
 }

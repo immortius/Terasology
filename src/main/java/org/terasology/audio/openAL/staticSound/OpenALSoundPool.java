@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.terasology.audio.openAL.staticSound;
 
-package org.terasology.audio.loaders;
+import org.terasology.audio.openAL.BaseSoundPool;
 
-import org.terasology.asset.AssetLoader;
-import org.terasology.asset.AssetUri;
-import org.terasology.audio.StreamingSoundData;
+public class OpenALSoundPool extends BaseSoundPool {
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.List;
+    public OpenALSoundPool() {
+    }
 
-/**
- * @author Immortius
- */
-public class OggStreamingSoundLoader implements AssetLoader<StreamingSoundData> {
-    @Override
-    public StreamingSoundData load(AssetUri uri, InputStream stream, List<URL> urls) throws IOException {
-        return new OggStreamingSoundData(urls.get(0));
+    public OpenALSoundPool(int capacity) {
+        super(capacity);
+    }
+
+    protected OpenALSoundSource createSoundSource() {
+        return new OpenALSoundSource(this);
     }
 }

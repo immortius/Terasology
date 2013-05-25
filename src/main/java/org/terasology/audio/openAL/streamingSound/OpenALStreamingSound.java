@@ -13,56 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.audio.openAL;
+package org.terasology.audio.openAL.streamingSound;
 
 import org.lwjgl.openal.AL10;
+import org.terasology.asset.AbstractAsset;
 import org.terasology.asset.AssetUri;
-import org.terasology.audio.Sound;
+import org.terasology.audio.StreamingSound;
+import org.terasology.audio.StreamingSoundData;
+import org.terasology.audio.openAL.OpenALException;
 
-import java.net.URL;
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.openal.AL10.AL_SIZE;
 import static org.lwjgl.openal.AL10.alGetBufferi;
 
-public abstract class OpenALStreamingSound implements Sound {
+public final class OpenALStreamingSound extends AbstractAsset<StreamingSoundData> implements StreamingSound {
     private final static int BUFFER_POOL_SIZE = 3;
+    private final static int BUFFER_SIZE = 4096 * 8;
 
-    private final AssetUri uri;
-    protected final URL audioSource;
-
+    private StreamingSoundData stream;
     protected int[] buffers;
-
     protected int lastUpdatedBuffer;
+    private ByteBuffer dataBuffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
 
-    public OpenALStreamingSound(AssetUri uri, URL source) {
-        this.uri = uri;
-        this.audioSource = source;
-
-        this.initializeBuffers();
-
-        this.reset();
+    public OpenALStreamingSound(AssetUri uri, StreamingSoundData stream) {
+        super(uri);
+        this.stream = stream;
     }
-
-    @Override
-    public AssetUri getURI() {
-        return uri;
-    }
-
-    protected abstract ByteBuffer fetchData();
 
     public int[] getBuffers() {
         return this.buffers;
     }
 
     public boolean updateBuffer(int buffer) {
-        ByteBuffer bufferData = this.fetchData();
+        stream.readNextInto(dataBuffer);
 
-        if (bufferData == null || bufferData.limit() == 0) {
-            return false; // no more data available
+        if (dataBuffer.limit() == 0) {
+            return false;
         }
 
-        AL10.alBufferData(buffer, this.getChannels() == 1 ? AL10.AL_FORMAT_MONO16 : AL10.AL_FORMAT_STEREO16, bufferData, this.getSamplingRate());
+        AL10.alBufferData(buffer, stream.getChannels() == 1 ? AL10.AL_FORMAT_MONO16 : AL10.AL_FORMAT_STEREO16, dataBuffer, stream.getSamplingRate());
         OpenALException.checkState("Uploading buffer data");
 
         this.lastUpdatedBuffer = buffer;
@@ -82,26 +72,53 @@ public abstract class OpenALStreamingSound implements Sound {
     }
 
     @Override
+    public int getChannels() {
+        return stream.getChannels();
+    }
+
+    @Override
+    public int getSamplingRate() {
+        return stream.getSamplingRate();
+    }
+
     public int getBufferSize() {
         return alGetBufferi(lastUpdatedBuffer, AL_SIZE);
     }
 
-    @Override
     public int getBufferId() {
         return lastUpdatedBuffer;
     }
 
-    public abstract int getBufferBits();
+    public int getBufferBits() {
+        return stream.getBufferBits();
+    }
 
     @Override
     public void dispose() {
         // TODO: Fix this
         for (int i = 0; i < buffers.length; i++) {
             if (buffers[i] != 0) {
-                // AL10.alDeleteBuffers(buffers[i]);
+                AL10.alDeleteBuffers(buffers[i]);
             }
         }
         OpenALException.checkState("Deleting buffer data");
         buffers = new int[0];
+    }
+
+    @Override
+    public void reload(StreamingSoundData data) {
+        dispose();
+        stream = data;
+        this.initializeBuffers();
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return buffers.length == 0;
+    }
+
+    @Override
+    public void reset() {
+        stream.reset();
     }
 }

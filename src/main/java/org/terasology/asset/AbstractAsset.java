@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package org.terasology.audio.loaders;
-
-import org.terasology.asset.AssetLoader;
-import org.terasology.asset.AssetUri;
-import org.terasology.audio.StreamingSoundData;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.List;
+package org.terasology.asset;
 
 /**
- * @author Immortius
+ *
  */
-public class OggStreamingSoundLoader implements AssetLoader<StreamingSoundData> {
-    @Override
-    public StreamingSoundData load(AssetUri uri, InputStream stream, List<URL> urls) throws IOException {
-        return new OggStreamingSoundData(urls.get(0));
+public abstract class AbstractAsset<T extends AssetData> implements Asset<T> {
+
+    private final AssetUri uri;
+
+    public AbstractAsset(AssetUri uri) {
+        this.uri = uri;
     }
+
+    /**
+     * @return This asset's identifying URI.
+     */
+    public final AssetUri getURI() {
+        return uri;
+    }
+
 }

@@ -14,23 +14,29 @@
  * limitations under the License.
  */
 
-package org.terasology.audio.loaders;
+package org.terasology.audio;
 
-import org.terasology.asset.AssetLoader;
-import org.terasology.asset.AssetUri;
-import org.terasology.audio.StreamingSoundData;
+import org.terasology.asset.AssetData;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.List;
+import java.nio.ByteBuffer;
 
 /**
- * @author Immortius
+ * The information used to create a streaming sound asset
  */
-public class OggStreamingSoundLoader implements AssetLoader<StreamingSoundData> {
-    @Override
-    public StreamingSoundData load(AssetUri uri, InputStream stream, List<URL> urls) throws IOException {
-        return new OggStreamingSoundData(urls.get(0));
-    }
+public interface StreamingSoundData extends AssetData {
+
+    ByteBuffer readNextInto(ByteBuffer dataBuffer);
+
+    int getChannels();
+
+    int getBufferBits();
+
+    int getSamplingRate();
+
+    void reset();
+
+    void dispose();
+
 }

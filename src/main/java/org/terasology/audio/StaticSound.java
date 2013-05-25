@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package org.terasology.audio.loaders;
+package org.terasology.audio;
 
-import org.terasology.asset.AssetLoader;
-import org.terasology.asset.AssetUri;
-import org.terasology.audio.StreamingSoundData;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.List;
+import org.terasology.asset.Asset;
 
 /**
- * @author Immortius
+ * Interface for a non-streamed sound - these sounds are loaded entirely into memory.
  */
-public class OggStreamingSoundLoader implements AssetLoader<StreamingSoundData> {
-    @Override
-    public StreamingSoundData load(AssetUri uri, InputStream stream, List<URL> urls) throws IOException {
-        return new OggStreamingSoundData(urls.get(0));
-    }
+public interface StaticSound extends Sound<SoundData> {
+
+    /**
+     * Returns sound sample length in seconds
+     *
+     * @return
+     */
+    public float getLength();
 }

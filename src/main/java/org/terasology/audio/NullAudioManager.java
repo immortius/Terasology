@@ -16,8 +16,10 @@
 
 package org.terasology.audio;
 
+import org.terasology.asset.AssetFactory;
 import org.terasology.asset.AssetUri;
 import org.terasology.audio.nullAudio.NullSound;
+import org.terasology.audio.nullAudio.NullStreamingSound;
 
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
@@ -86,12 +88,23 @@ public class NullAudioManager implements AudioManager {
     }
 
     @Override
-    public Sound loadStreamingSound(AssetUri uri, List<URL> urls) {
-        return new NullSound(uri);
+    public AssetFactory<SoundData, StaticSound> getStaticSoundFactory() {
+        return new AssetFactory<SoundData, StaticSound>() {
+            @Override
+            public StaticSound buildAsset(AssetUri uri, SoundData data) {
+                return new NullSound(uri, data);
+            }
+        };
     }
 
     @Override
-    public Sound loadSound(AssetUri uri, InputStream stream) throws IOException {
-        return new NullSound(uri);
+    public AssetFactory<StreamingSoundData, StreamingSound> getStreamingSoundFactory() {
+        return new AssetFactory<StreamingSoundData, StreamingSound>() {
+            @Override
+            public StreamingSound buildAsset(AssetUri uri, StreamingSoundData data) {
+                return new NullStreamingSound(uri, data);
+            }
+        };
     }
+
 }

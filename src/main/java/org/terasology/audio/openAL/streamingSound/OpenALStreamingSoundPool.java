@@ -13,12 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.audio.openAL;
+package org.terasology.audio.openAL.streamingSound;
 
-import org.terasology.asset.AssetUri;
 
-public class OggSound extends OpenALSound {
-    public OggSound(AssetUri uri, int bufferId) {
-        super(uri, bufferId);
+import org.terasology.audio.openAL.BaseSoundPool;
+import org.terasology.audio.openAL.SoundSource;
+
+public class OpenALStreamingSoundPool extends BaseSoundPool {
+
+    public OpenALStreamingSoundPool(int capacity) {
+        super(capacity);
+    }
+
+    public OpenALStreamingSoundPool() {
+    }
+
+    @Override
+    protected SoundSource createSoundSource() {
+        return new OpenALStreamingSoundSource(this);
     }
 }

@@ -274,6 +274,8 @@ public class TerasologyEngine implements GameEngine {
             audioManager = new OpenALManager(config.getAudio());
         }
         CoreRegistry.put(AudioManager.class, audioManager);
+        AssetManager.getInstance().setAssetFactory(AssetType.SOUND, audioManager.getStaticSoundFactory());
+        AssetManager.getInstance().setAssetFactory(AssetType.MUSIC, audioManager.getStreamingSoundFactory());
     }
 
     private void initDisplay() {
