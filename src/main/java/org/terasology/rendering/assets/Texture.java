@@ -42,7 +42,7 @@ import static org.lwjgl.opengl.GL11.glTexParameterf;
 /**
  * @author Immortius
  */
-public class Texture implements Asset {
+public interface Texture extends Asset<TextureData> {
     public enum WrapMode {
         Clamp(GL_CLAMP),
         Repeat(GL_REPEAT);
@@ -79,83 +79,11 @@ public class Texture implements Asset {
         }
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(Texture.class);
+    int getWidth();
 
-    private AssetUri uri;
-    private int id;
-    private int width;
-    private int height;
-    private WrapMode wrapMode = WrapMode.Clamp;
-    private FilterMode filterMode = FilterMode.Nearest;
-    private ByteBuffer[] data;
+    int getHeight();
 
-    public Texture(ByteBuffer[] data, int width, int height, WrapMode wrapMode, FilterMode filterMode) {
-        this(new AssetUri(), data, width, height, wrapMode, filterMode);
-    }
+    WrapMode getWrapMode();
 
-    public Texture(AssetUri uri, ByteBuffer[] data, int width, int height, WrapMode wrapMode, FilterMode filterMode) {
-        if (data.length == 0) throw new IllegalArgumentException("Expected Data.length >= 1");
-        this.uri = uri;
-        this.width = width;
-        this.height = height;
-        this.wrapMode = wrapMode;
-        this.filterMode = filterMode;
-        this.data = data;
-
-        id = glGenTextures();
-        logger.debug("Bound texture '{}' - {}", uri, id);
-        glBindTexture(GL11.GL_TEXTURE_2D, id);
-
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode.getGLMode());
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode.getGLMode());
-        GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, filterMode.getGlMinFilter());
-        GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, filterMode.getGlMagFilter());
-        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 4);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, data.length - 1);
-
-        for (int i = 0; i < data.length; i++) {
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, i, GL11.GL_RGBA, width >> i, height >> i, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data[i]);
-        }
-    }
-
-    @Override
-    public AssetUri getURI() {
-        return uri;
-    }
-
-    @Override
-    public void dispose() {
-        if (id != 0) {
-            glDeleteTextures(id);
-            id = 0;
-        }
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public int getWidth() {
-        return width;
-    }
-
-    public int getHeight() {
-        return height;
-    }
-
-    public ByteBuffer getImageData(int mipmap) {
-        return data[mipmap];
-    }
-
-    public int getMipmapCount() {
-        return data.length;
-    }
-
-    public WrapMode getWrapMode() {
-        return wrapMode;
-    }
-
-    public FilterMode getFilterMode() {
-        return filterMode;
-    }
+    FilterMode getFilterMode();
 }

@@ -332,6 +332,10 @@ public final class TeraMath {
         return val;
     }
 
+    public static boolean isPowerOfTwo(int val) {
+        return val == ceilPowerOfTwo(val);
+    }
+
     /**
      * @param val
      * @return The size of a power of two - that is, the exponent.
