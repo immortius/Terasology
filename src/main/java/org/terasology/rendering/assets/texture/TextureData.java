@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.terasology.rendering.assets;
+package org.terasology.rendering.assets.texture;
 
 import org.terasology.asset.AssetData;
 import org.terasology.math.TeraMath;
+import org.terasology.rendering.assets.texture.Texture;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;

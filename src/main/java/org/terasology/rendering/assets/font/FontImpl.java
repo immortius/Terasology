@@ -1,28 +1,12 @@
-/*
- * Copyright 2013 Moving Blocks
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+package org.terasology.rendering.assets.font;
 
-package org.terasology.rendering.assets;
-
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import org.lwjgl.opengl.GL11;
 import org.newdawn.slick.Color;
-import org.terasology.asset.Asset;
+import org.terasology.asset.AbstractAsset;
 import org.terasology.asset.AssetUri;
 import org.terasology.logic.manager.ShaderManager;
+import org.terasology.rendering.assets.opengl.OpenGLTexture;
+import org.terasology.rendering.assets.texture.Texture;
 
 import static org.lwjgl.opengl.GL11.GL_TRIANGLE_FAN;
 import static org.lwjgl.opengl.GL11.glBegin;
@@ -39,31 +23,20 @@ import static org.lwjgl.opengl.GL11.glVertex3f;
 /**
  * @author Immortius
  */
-public class Font implements Asset {
-
-    private AssetUri uri;
-    private TIntObjectMap<FontCharacter> charMap = new TIntObjectHashMap<FontCharacter>();
+public class FontImpl extends AbstractAsset<FontData> implements Font {
+    private FontData data;
     private int lineHeight;
 
-    public Font(AssetUri uri) {
-        this.uri = uri;
+    public FontImpl(AssetUri uri, FontData data) {
+        super(uri);
+        reload(data);
     }
 
-    public void setCharacter(int id, FontCharacter character) {
-        charMap.put(id, character);
-    }
-
-    @Override
-    public AssetUri getURI() {
-        return uri;
-    }
-
-    @Override
-    public void dispose() {
-
-    }
-
+    // This function shouldn't be here, should be in a Canvas style class most likely.
     public void drawString(int x, int y, String text, Color color) {
+        if (isDisposed()) {
+            return;
+        }
         ShaderManager.getInstance().enableDefaultTextured();
 
         Texture bound = null;
@@ -75,10 +48,11 @@ public class Font implements Asset {
                 posX = x;
                 posY += lineHeight;
             } else {
-                FontCharacter character = charMap.get(c);
-                if (character != null) {
+                FontCharacter character = data.getCharacter(c);
+                if (character != null && character.getPage() instanceof OpenGLTexture) {
+                    OpenGLTexture openglPage = (OpenGLTexture) character.getPage();
                     if (!character.getPage().equals(bound)) {
-                        glBindTexture(GL11.GL_TEXTURE_2D, character.getPage().getId());
+                        glBindTexture(GL11.GL_TEXTURE_2D, openglPage.getId());
                         bound = character.getPage();
                     }
 
@@ -112,7 +86,7 @@ public class Font implements Asset {
                 largestWidth = Math.max(largestWidth, currentWidth);
                 currentWidth = 0;
             } else {
-                FontCharacter character = charMap.get(c);
+                FontCharacter character = data.getCharacter(c);
                 if (character != null) {
                     currentWidth += character.getxAdvance();
                 }
@@ -133,5 +107,20 @@ public class Font implements Asset {
 
     public void setLineHeight(int lineHeight) {
         this.lineHeight = lineHeight;
+    }
+
+    @Override
+    public void reload(FontData data) {
+        this.data = data;
+    }
+
+    @Override
+    public void dispose() {
+        this.data = null;
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return data == null;
     }
 }

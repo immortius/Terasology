@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.terasology.rendering.assets;
+package org.terasology.rendering.assets.opengl;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -22,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.asset.AbstractAsset;
 import org.terasology.asset.AssetUri;
+import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.assets.texture.TextureData;
 
 import java.nio.ByteBuffer;
 

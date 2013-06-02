@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.terasology.rendering.assetLoaders;
+package org.terasology.rendering.assets.texture;
 
 import com.google.gson.Gson;
 import org.newdawn.slick.opengl.PNGDecoder;
@@ -22,8 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.asset.AssetLoader;
 import org.terasology.asset.AssetUri;
-import org.terasology.rendering.assets.Texture;
-import org.terasology.rendering.assets.TextureData;
 
 import java.io.IOException;
 import java.io.InputStream;

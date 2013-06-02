@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package org.terasology.rendering.assets;
+package org.terasology.rendering.assets.font;
+
+import org.terasology.rendering.assets.texture.Texture;
 
 /**
  * @author Immortius
