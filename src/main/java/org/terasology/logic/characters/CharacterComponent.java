@@ -18,10 +18,11 @@ package org.terasology.logic.characters;
 import com.bulletphysics.linearmath.QuaternionUtil;
 import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.EntityRef;
+import org.terasology.entitySystem.Owns;
 import org.terasology.math.Direction;
 import org.terasology.math.TeraMath;
+import org.terasology.network.FieldReplicateType;
 import org.terasology.network.Replicate;
-import org.terasology.network.ReplicateType;
 
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
@@ -38,10 +39,11 @@ public final class CharacterComponent implements Component {
     public float pitch;
     public float yaw;
 
-    @Replicate(ReplicateType.SERVER_TO_OWNER)
+    @Replicate(FieldReplicateType.SERVER_TO_OWNER)
+    @Owns
     public EntityRef movingItem = EntityRef.NULL;
 
-    @Replicate(ReplicateType.SERVER_TO_OWNER)
+    @Replicate(FieldReplicateType.SERVER_TO_OWNER)
     public EntityRef controller = EntityRef.NULL;
 
     // These are only used by the owning player at the moment

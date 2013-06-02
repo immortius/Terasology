@@ -17,12 +17,18 @@ package org.terasology.entitySystem.metadata;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.terasology.entitySystem.EntityRef;
+import org.terasology.entitySystem.Owns;
+import org.terasology.network.NoReplicate;
 import org.terasology.network.Replicate;
 import org.terasology.protobuf.EntityData;
+import org.terasology.utilities.ReflectionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Locale;
 
 /**
@@ -38,14 +44,26 @@ public final class FieldMetadata {
     private TypeHandler serializationHandler;
     private boolean replicated;
     private Replicate replicationInfo;
+    private boolean ownedReference;
 
-    public FieldMetadata(Field field, Class type, TypeHandler handler, boolean replicated) {
+    public FieldMetadata(Field field, TypeHandler handler, boolean replicatedByDefault) {
         this.field = field;
         this.serializationHandler = handler;
-        this.replicated = replicated;
+        this.replicated = replicatedByDefault;
+        if (field.getAnnotation(NoReplicate.class) != null) {
+            replicated = false;
+        }
+        if (field.getAnnotation(Replicate.class) != null) {
+            replicated = true;
+        }
         this.replicationInfo = field.getAnnotation(Replicate.class);
-        getter = findGetter(type, field);
-        setter = findSetter(type, field);
+        ownedReference = field.getAnnotation(Owns.class) != null && (EntityRef.class.isAssignableFrom(field.getType()) || isCollectionOf(EntityRef.class, field));
+        getter = findGetter(field);
+        setter = findSetter(field);
+    }
+
+    private boolean isCollectionOf(Class<?> targetType, Field field) {
+        return (Collection.class.isAssignableFrom(field.getType()) && ReflectionUtil.getTypeParameter(field.getGenericType(), 0) == EntityRef.class);
     }
 
     public Object deserialize(EntityData.Value value) {
@@ -111,24 +129,28 @@ public final class FieldMetadata {
         return replicated;
     }
 
+    public boolean isOwnedReference() {
+        return ownedReference;
+    }
+
     public Replicate getReplicationInfo() {
         return replicationInfo;
     }
 
-    private Method findGetter(Class type, Field field) {
-        Method result = findMethod(type, "get" + field.getName().substring(0, 1).toUpperCase(Locale.ENGLISH) + field.getName().substring(1));
+    private Method findGetter(Field field) {
+        Method result = findMethod(field.getDeclaringClass(), "get" + field.getName().substring(0, 1).toUpperCase(Locale.ENGLISH) + field.getName().substring(1));
         if (result != null && field.getType().equals(result.getReturnType())) {
             return result;
         }
-        result = findMethod(type, "is" + field.getName().substring(0, 1).toUpperCase(Locale.ENGLISH) + field.getName().substring(1));
+        result = findMethod(field.getDeclaringClass(), "is" + field.getName().substring(0, 1).toUpperCase(Locale.ENGLISH) + field.getName().substring(1));
         if (result != null && field.getType().equals(result.getReturnType())) {
             return result;
         }
         return null;
     }
 
-    private Method findSetter(Class type, Field field) {
-        return findMethod(type, "set" + field.getName().substring(0, 1).toUpperCase(Locale.ENGLISH) + field.getName().substring(1), field.getType());
+    private Method findSetter(Field field) {
+        return findMethod(field.getDeclaringClass(), "set" + field.getName().substring(0, 1).toUpperCase(Locale.ENGLISH) + field.getName().substring(1), field.getType());
     }
 
     private Method findMethod(Class type, String methodName, Class<?>... parameters) {

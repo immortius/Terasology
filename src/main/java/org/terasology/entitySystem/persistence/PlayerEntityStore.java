@@ -22,12 +22,22 @@ import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.EngineEntityManager;
 import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.EntityStore;
+import org.terasology.entitySystem.OwnershipHelper;
 import org.terasology.entitySystem.lifecycleEvents.OnStoreEvent;
 import org.terasology.entitySystem.metadata.ClassMetadata;
+import org.terasology.entitySystem.metadata.ComponentMetadata;
+import org.terasology.entitySystem.metadata.FieldMetadata;
 import org.terasology.protobuf.EntityData;
+import org.terasology.world.chunks.Chunk;
 
 import javax.vecmath.Vector3f;
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -39,16 +49,19 @@ public class PlayerEntityStore implements EntityStore {
     private EngineEntityManager entityManager;
     private File playerDataFile;
     private EntitySerializer serializer;
-    private Vector3f relevanceLocation = new Vector3f();
+    private Vector3f relevanceLocation = new Vector3f(Chunk.SIZE_X / 2, Chunk.SIZE_Y / 2, Chunk.SIZE_Z / 2);
     private boolean hasCharacter = false;
 
     private EntityData.EntityStore.Builder entityStoreBuilder;
 
     private EntityData.EntityStore loadedData;
 
+    private OwnershipHelper helper;
+
 
     public PlayerEntityStore(String playerId, EngineEntityManager manager) {
         entityManager = manager;
+        helper = new OwnershipHelper(manager.getComponentLibrary());
         serializer = new EntitySerializer(manager, manager.getComponentLibrary());
         serializer.setIgnoringEntityId(false);
         File playerSubDir = new File(PathManager.getInstance().getCurrentWorldPath(), PLAYER_STORE_SUBDIR);
@@ -84,8 +97,12 @@ public class PlayerEntityStore implements EntityStore {
 
     @Override
     public void store(EntityRef entity, String name) {
+
         if (entityStoreBuilder == null) {
             throw new IllegalStateException("Entity Store not ready for storing entities");
+        }
+        for (EntityRef ownedEntity : helper.listOwnedEntities(entity)) {
+            store(ownedEntity);
         }
         if (entity.exists()) {
             entity.send(new OnStoreEvent(this));
@@ -133,7 +150,7 @@ public class PlayerEntityStore implements EntityStore {
     }
 
     @Override
-    public Map<String, EntityRef> restoreAll()  {
+    public Map<String, EntityRef> restoreAll() {
         if (loadedData == null) {
             throw new IllegalStateException("Entity store not ready to restore entities");
         }

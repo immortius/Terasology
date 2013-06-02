@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
-package org.terasology.network;
+package org.terasology.entitySystem;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * @author Immortius
+ * When used in a Component on a EntityRef, List&lt;EntityRef> or Set&lt;EntityRef> field, denotes that the Entity
+ * will assume ownership of the entity or entities contained in that field.
+ * <p/>
+ * This means:
+ * <ul>
+ *     <li>The owned entity will be persisted and restored along with its owner.</li>
+ * </ul>
  */
-public enum ReplicateType {
-    SERVER_TO_CLIENT(false),
-    SERVER_TO_OWNER(false),
-    OWNER_TO_SERVER(true),
-    OWNER_TO_SERVER_TO_CLIENT(true),
-    INITIAL(false);
-
-    private boolean replicateFromOwner;
-
-    private ReplicateType(boolean fromOwner) {
-        this.replicateFromOwner = fromOwner;
-    }
-
-    public boolean isReplicateFromOwner() {
-        return replicateFromOwner;
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface Owns {
 }

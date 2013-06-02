@@ -26,8 +26,7 @@ import org.terasology.entitySystem.metadata.core.ListTypeHandler;
 import org.terasology.entitySystem.metadata.core.MappedContainerTypeHandler;
 import org.terasology.entitySystem.metadata.core.SetTypeHandler;
 import org.terasology.entitySystem.metadata.core.StringMapTypeHandler;
-import org.terasology.network.NoReplicate;
-import org.terasology.network.Replicate;
+import org.terasology.utilities.ReflectionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -43,7 +42,7 @@ import java.util.Set;
  */
 public class TypeHandlerLibrary implements Iterable<Map.Entry<Class<?>, TypeHandler<?>>> {
     private static final Logger logger = LoggerFactory.getLogger(TypeHandlerLibrary.class);
-    private static final int MAX_SERIALIZATION_DEPTH = 1;
+    private static final int MAX_SERIALIZATION_DEPTH = 10;
 
     private Map<Class<?>, TypeHandler<?>> typeHandlers;
 
@@ -79,26 +78,16 @@ public class TypeHandlerLibrary implements Iterable<Map.Entry<Class<?>, TypeHand
             if (typeHandler == null) {
                 logger.error("Unsupported field type in component type {}, {} : {}", forClass.getSimpleName(), field.getName(), field.getGenericType());
             } else {
-                boolean replicate = replicateFieldsByDefault;
-                if (field.getAnnotation(NoReplicate.class) != null) {
-                    replicate = false;
-                }
-                if (field.getAnnotation(Replicate.class) != null) {
-                    replicate = true;
-                }
-                info.addField(new FieldMetadata(field, forClass, typeHandler, replicate));
+
+                info.addField(new FieldMetadata(field, typeHandler, replicateFieldsByDefault));
             }
         }
     }
 
     // TODO: Refactor
     private TypeHandler getHandlerFor(Type type, int depth) {
-        Class typeClass;
-        if (type instanceof Class) {
-            typeClass = (Class) type;
-        } else if (type instanceof ParameterizedType) {
-            typeClass = (Class) ((ParameterizedType) type).getRawType();
-        } else {
+        Class<?> typeClass = ReflectionUtil.getClassOfType(type);
+        if (typeClass == null) {
             logger.error("Cannot obtain class for type {}", type);
             return null;
         }
@@ -108,7 +97,7 @@ public class TypeHandlerLibrary implements Iterable<Map.Entry<Class<?>, TypeHand
         }
         // For lists, createEntityRef the handler for the contained type and wrap in a list type handler
         else if (List.class.isAssignableFrom(typeClass)) {
-            Type parameter = getTypeParameter(type, 0);
+            Type parameter = ReflectionUtil.getTypeParameter(type, 0);
             if (parameter != null) {
                 TypeHandler innerHandler = getHandlerFor(parameter, depth);
                 if (innerHandler != null) {
@@ -120,7 +109,7 @@ public class TypeHandlerLibrary implements Iterable<Map.Entry<Class<?>, TypeHand
         }
         // For sets:
         else if (Set.class.isAssignableFrom(typeClass)) {
-            Type parameter = getTypeParameter(type, 0);
+            Type parameter = ReflectionUtil.getTypeParameter(type, 0);
             if (parameter != null) {
                 TypeHandler innerHandler = getHandlerFor(parameter, depth);
                 if (innerHandler != null) {
@@ -132,8 +121,8 @@ public class TypeHandlerLibrary implements Iterable<Map.Entry<Class<?>, TypeHand
         }
         // For Maps, createEntityRef the handler for the value type (and maybe key too?)
         else if (Map.class.isAssignableFrom(typeClass)) {
-            Type keyParameter = getTypeParameter(type, 0);
-            Type contentsParameter = getTypeParameter(type, 1);
+            Type keyParameter = ReflectionUtil.getTypeParameter(type, 0);
+            Type contentsParameter = ReflectionUtil.getTypeParameter(type, 1);
             if (keyParameter != null && contentsParameter != null && String.class == keyParameter) {
                 TypeHandler valueHandler = getHandlerFor(contentsParameter, depth);
                 if (valueHandler != null) {
@@ -146,8 +135,12 @@ public class TypeHandlerLibrary implements Iterable<Map.Entry<Class<?>, TypeHand
         else if (typeHandlers.containsKey(typeClass)) {
             return typeHandlers.get(typeClass);
         }
-        // For unknown types of a limited depth, assume they are data holders and use them
+        // For unknown types annotated by MappedContainer annotation, map them
         else if (depth <= MAX_SERIALIZATION_DEPTH && !Modifier.isAbstract(typeClass.getModifiers()) && !typeClass.isLocalClass() && !(typeClass.isMemberClass() && !Modifier.isStatic(typeClass.getModifiers()))) {
+            if (typeClass.getAnnotation(MappedContainer.class) == null) {
+                logger.error("Unable to register field of type {}: not a supported type or MappedContainer", typeClass.getSimpleName());
+                return null;
+            }
             try {
                 // Check if constructor exists
                 typeClass.getConstructor();
@@ -156,7 +149,6 @@ public class TypeHandlerLibrary implements Iterable<Map.Entry<Class<?>, TypeHand
                 return null;
             }
 
-            logger.warn("Handling serialization of type {} via MappedContainer", typeClass);
             MappedContainerTypeHandler mappedHandler = new MappedContainerTypeHandler(typeClass);
             for (Field field : typeClass.getDeclaredFields()) {
                 if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers()))
@@ -167,25 +159,13 @@ public class TypeHandlerLibrary implements Iterable<Map.Entry<Class<?>, TypeHand
                 if (handler == null) {
                     logger.error("Unsupported field type in component type {}, {} : {}", typeClass.getSimpleName(), field.getName(), field.getGenericType());
                 } else {
-                    mappedHandler.addField(new FieldMetadata(field, typeClass, handler, true));
+                    mappedHandler.addField(new FieldMetadata(field, handler, false));
                 }
             }
             return mappedHandler;
         }
 
         return null;
-    }
-
-    // TODO - Improve parameter lookup to go up the inheritance tree more
-    private Type getTypeParameter(Type type, int parameter) {
-        if (!(type instanceof ParameterizedType)) {
-            return null;
-        }
-        ParameterizedType parameterizedType = (ParameterizedType) type;
-        if (parameterizedType.getActualTypeArguments().length < parameter + 1) {
-            return null;
-        }
-        return parameterizedType.getActualTypeArguments()[parameter];
     }
 
     @Override

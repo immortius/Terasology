@@ -22,6 +22,7 @@ import org.terasology.entityFactory.PlayerFactory;
 import org.terasology.entitySystem.*;
 import org.terasology.entitySystem.event.ReceiveEvent;
 import org.terasology.entitySystem.persistence.PlayerEntityStore;
+import org.terasology.logic.characters.CharacterComponent;
 import org.terasology.logic.inventory.InventoryManager;
 import org.terasology.logic.location.Location;
 import org.terasology.logic.location.LocationComponent;
@@ -110,11 +111,6 @@ public class PlayerSystem implements UpdateSubscriberSystem {
             clientLoc.setLocalRotation(new Quat4f(0, 0, 0, 1));
             clientEntity.saveComponent(clientLoc);
 
-            NetworkComponent netComp = playerCharacter.getComponent(NetworkComponent.class);
-            if (netComp != null) {
-                netComp.owner = clientEntity;
-                playerCharacter.saveComponent(netComp);
-            }
             Client clientListener = networkSystem.getOwner(clientEntity);
             int distance = clientListener.getViewDistance();
             if (!clientListener.isLocal()) {
@@ -128,11 +124,11 @@ public class PlayerSystem implements UpdateSubscriberSystem {
 
     @ReceiveEvent(components = ClientComponent.class)
     public void onConnect(ConnectedEvent connected, EntityRef entity) {
+        LocationComponent loc = entity.getComponent(LocationComponent.class);
+        loc.setWorldPosition(connected.getEntityStore().getRelevanceLocation());
+        entity.saveComponent(loc);
         worldRenderer.getChunkProvider().addRelevanceEntity(entity, 4, networkSystem.getOwner(entity));
         if (connected.getEntityStore().hasCharacter()) {
-            LocationComponent location = entity.getComponent(LocationComponent.class);
-            location.setWorldPosition(connected.getEntityStore().getRelevanceLocation());
-            entity.saveComponent(location);
             if (worldRenderer.getWorldProvider().isBlockActive(connected.getEntityStore().getRelevanceLocation())) {
                 restoreCharacter(entity, connected.getEntityStore());
             } else {
@@ -144,12 +140,7 @@ public class PlayerSystem implements UpdateSubscriberSystem {
             if (chunkProvider.getChunk(pos) != null) {
                 spawnPlayer(entity, new Vector3i(Chunk.SIZE_X / 2, Chunk.SIZE_Y, Chunk.SIZE_Z / 2));
             } else {
-                LocationComponent location = entity.getComponent(LocationComponent.class);
-                location.setWorldPosition(new Vector3f(Chunk.SIZE_X / 2, Chunk.SIZE_Y / 2, Chunk.SIZE_Z / 2));
-                entity.saveComponent(location);
-
                 SpawningClientInfo spawningClientInfo = new SpawningClientInfo(entity, new Vector3f(Chunk.SIZE_X / 2, Chunk.SIZE_Y / 2, Chunk.SIZE_Z / 2));
-
                 clientsPreparingToSpawn.add(spawningClientInfo);
             }
         }
@@ -168,14 +159,13 @@ public class PlayerSystem implements UpdateSubscriberSystem {
                 distance += ChunkConstants.REMOTE_GENERATION_DISTANCE;
             }
             worldRenderer.getChunkProvider().updateRelevanceEntity(entity, distance);
-            NetworkComponent netComp = character.getComponent(NetworkComponent.class);
-            if (netComp != null) {
-                netComp.owner = entity;
-                character.saveComponent(netComp);
-            }
             ClientComponent client = entity.getComponent(ClientComponent.class);
             client.character = character;
             entity.saveComponent(client);
+            CharacterComponent characterComp = character.getComponent(CharacterComponent.class);
+            characterComp.controller = entity;
+            character.saveComponent(characterComp);
+            Location.attachChild(character, entity);
         }
     }
 

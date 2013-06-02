@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.terasology.entitySystem.metadata;
 
-import org.terasology.entitySystem.event.Event;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * The library for metadata about events (and their fields).
- *
- * @author Immortius <immortius@gmail.com>
+ * This annotation is used to mark simple classes for mapped serialization. These classes must not have recursive nested
+ * elements (the flatter they are the better), and must not depend on objects appearing multiple times in their structure
+ * being the same object - when deserialized each object will be a separate instance.
  */
-public interface EventLibrary extends ClassLibrary<Event, EventMetadata<? extends Event>> {
-
-    /**
-     * @param clazz
-     * @return The metadata for the given clazz, or null if not registered.
-     */
-    <T extends Event> EventMetadata<T> getMetadata(Class<T> clazz);
-
-    <T extends Event> EventMetadata<T> getMetadata(T object);
-
-    EventMetadata<? extends Event> getMetadata(String className);
-
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface MappedContainer {
 }

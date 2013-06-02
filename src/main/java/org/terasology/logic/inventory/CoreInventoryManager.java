@@ -34,6 +34,7 @@ import org.terasology.entitySystem.RegisterMode;
 import org.terasology.entitySystem.RegisterSystem;
 import org.terasology.entitySystem.Share;
 import org.terasology.entitySystem.lifecycleEvents.OnDeactivatedEvent;
+import org.terasology.entitySystem.lifecycleEvents.OnRemovedEvent;
 import org.terasology.entitySystem.metadata.EntitySystemLibrary;
 import org.terasology.logic.inventory.events.InventoryChangeAcknowledgedRequest;
 import org.terasology.logic.inventory.events.MoveItemAmountRequest;
@@ -294,20 +295,6 @@ public class CoreInventoryManager implements ComponentSystem, SlotBasedInventory
      * Event handling
      */
 
-    @ReceiveEvent(components = InventoryComponent.class)
-    public void onDestroyed(OnDeactivatedEvent event, EntityRef entity) {
-        if (networkSystem.getMode().isAuthority()) {
-            InventoryComponent inventory = entity.getComponent(InventoryComponent.class);
-            for (EntityRef content : inventory.itemSlots) {
-                if (content != entity) {
-                    content.destroy();
-                } else {
-                    logger.warn("Inventory contained itself: {}", entity);
-                }
-            }
-        }
-    }
-
     @ReceiveEvent(components = ClientComponent.class)
     public void onChange(InventoryChangeAcknowledgedRequest event, EntityRef inventoryEntity) {
         if (!networkSystem.getMode().isAuthority()) {
@@ -490,12 +477,6 @@ public class CoreInventoryManager implements ComponentSystem, SlotBasedInventory
         if (networkSystem.getMode().isAuthority()) {
             inventoryEntity.saveComponent(inventory);
 
-            // Update item ownership
-            NetworkComponent networkComponent = item.getComponent(NetworkComponent.class);
-            if (networkComponent != null) {
-                networkComponent.owner = inventoryEntity;
-                item.saveComponent(networkComponent);
-            }
             if (item.exists()) {
                 inventoryEntity.send(new ReceivedItemEvent(item, slot));
             }

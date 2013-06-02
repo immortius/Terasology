@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.terasology.engine.Terasology;
 import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.EngineEntityManager;
 import org.terasology.entitySystem.metadata.ClassMetadata;
@@ -49,8 +50,8 @@ public class ComponentSerializerTest {
 
     @Test
     public void testGetterSetterUtilization() throws Exception {
-        ClassMetadata info = new ClassMetadata(GetterSetterComponent.class);
-        info.addField(new FieldMetadata(GetterSetterComponent.class.getDeclaredField("value"), GetterSetterComponent.class, new Vector3fTypeHandler(), false));
+        ClassMetadata<?> info = new ClassMetadata<>(GetterSetterComponent.class);
+        info.addField(new FieldMetadata(GetterSetterComponent.class.getDeclaredField("value"), new Vector3fTypeHandler(), false));
 
         GetterSetterComponent comp = new GetterSetterComponent();
         GetterSetterComponent newComp = (GetterSetterComponent) componentSerializer.deserialize(componentSerializer.serialize(comp));

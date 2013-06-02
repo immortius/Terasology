@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.entitySystem.metadata;
 
-import org.terasology.entitySystem.event.Event;
+package org.terasology.network;
 
 /**
- * The library for metadata about events (and their fields).
- *
- * @author Immortius <immortius@gmail.com>
+ * @author Immortius
  */
-public interface EventLibrary extends ClassLibrary<Event, EventMetadata<? extends Event>> {
+public enum FieldReplicateType {
+    SERVER_TO_CLIENT(false),
+    SERVER_TO_OWNER(false),
+    OWNER_TO_SERVER(true),
+    OWNER_TO_SERVER_TO_CLIENT(true);
 
-    /**
-     * @param clazz
-     * @return The metadata for the given clazz, or null if not registered.
-     */
-    <T extends Event> EventMetadata<T> getMetadata(Class<T> clazz);
+    private boolean replicateFromOwner;
 
-    <T extends Event> EventMetadata<T> getMetadata(T object);
+    private FieldReplicateType(boolean fromOwner) {
+        this.replicateFromOwner = fromOwner;
+    }
 
-    EventMetadata<? extends Event> getMetadata(String className);
-
+    public boolean isReplicateFromOwner() {
+        return replicateFromOwner;
+    }
 }

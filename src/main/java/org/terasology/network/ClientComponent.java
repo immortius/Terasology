@@ -18,8 +18,11 @@ package org.terasology.network;
 
 import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.EntityRef;
+import org.terasology.entitySystem.Owns;
 
 /**
+ * The component that marks an entity as being a Client Entity (essentially, a player) and ties them to a
+ * client info entity (for replicated information) and character entity (their body).
  * @author Immortius
  */
 public class ClientComponent implements Component {
@@ -29,5 +32,6 @@ public class ClientComponent implements Component {
     public EntityRef clientInfo = EntityRef.NULL;
 
     @Replicate
+    @Owns
     public EntityRef character = EntityRef.NULL;
 }

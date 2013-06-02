@@ -87,6 +87,7 @@ public abstract class TerasologyTestingEnvironment {
             CoreRegistry.put(ModManager.class, modManager);
             AssetType.registerAssetTypes();
             AssetManager.getInstance().addAssetSource(new ClasspathSource(ModManager.ENGINE_PACKAGE, Terasology.class.getProtectionDomain().getCodeSource(), ModManager.ASSETS_SUBDIRECTORY, ModManager.OVERRIDES_SUBDIRECTORY));
+            AssetManager.getInstance().addAssetSource(new ClasspathSource("unittest", TerasologyTestingEnvironment.class.getProtectionDomain().getCodeSource(), ModManager.ASSETS_SUBDIRECTORY, ModManager.OVERRIDES_SUBDIRECTORY));
         } else {
             CoreRegistry.put(BlockManager.class, blockManager);
             CoreRegistry.put(Config.class, config);

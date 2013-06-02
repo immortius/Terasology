@@ -55,8 +55,8 @@ import org.terasology.network.NetworkSystem;
 import org.terasology.network.events.ConnectedEvent;
 import org.terasology.network.events.DisconnectedEvent;
 import org.terasology.network.exceptions.HostingFailedException;
-import org.terasology.network.pipelineFactory.TerasologyClientPipelineFactory;
-import org.terasology.network.pipelineFactory.TerasologyServerPipelineFactory;
+import org.terasology.network.internal.pipelineFactory.TerasologyClientPipelineFactory;
+import org.terasology.network.internal.pipelineFactory.TerasologyServerPipelineFactory;
 import org.terasology.network.serialization.NetComponentSerializeCheck;
 import org.terasology.network.serialization.NetEntityRefTypeHandler;
 import org.terasology.performanceMonitor.PerformanceMonitor;
@@ -77,6 +77,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 
 /**
+ * Implementation of the Network System using Netty and TCP/IP
  * @author Immortius
  */
 public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem {
@@ -93,12 +94,14 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
     private EventSerializer eventSerializer;
     private PackedEntitySerializer entitySerializer;
     private BlockManager blockManager;
+    private OwnershipHelper ownershipHelper;
 
     private ChannelFactory factory;
     private TIntIntMap netIdToEntityId = new TIntIntHashMap();
 
     private Timer timer;
     private long nextNetworkTick = 0;
+
 
     // Server only
     private ChannelGroup allChannels = new DefaultChannelGroup("tera-channels");
@@ -427,6 +430,7 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
         this.entityManager = entityManager;
         this.entityManager.subscribe(this);
         this.blockManager = CoreRegistry.get(BlockManager.class);
+        this.ownershipHelper = new OwnershipHelper(entityManager.getComponentLibrary());
 
         CoreRegistry.get(ComponentSystemManager.class).register(new NetworkEntitySystem(this), "engine:networkEntitySystem");
 
@@ -462,27 +466,30 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
 
     @Override
     public void onEntityComponentAdded(EntityRef entity, Class<? extends Component> component) {
+        ComponentMetadata<? extends Component> metadata = entitySystemLibrary.getComponentLibrary().getMetadata(component);
         NetworkComponent netComp = entity.getComponent(NetworkComponent.class);
-        if (netComp != null && netComp.getNetworkId() != NULL_NET_ID) {
-            ComponentMetadata<? extends Component> metadata = entitySystemLibrary.getComponentLibrary().getMetadata(component);
-            switch (mode) {
-                case SERVER:
-                    if (metadata.isReplicated()) {
-                        for (NetClient client : netClientList) {
-                            logger.info("Component {} added to {}", component, entity);
-                            client.setComponentAdded(netComp.getNetworkId(), component);
+        if (netComp != null) {
+            if (netComp.getNetworkId() != NULL_NET_ID) {
+                switch (mode) {
+                    case SERVER:
+                        if (metadata.isReplicated()) {
+                            for (NetClient client : netClientList) {
+                                logger.info("Component {} added to {}", component, entity);
+                                client.setComponentAdded(netComp.getNetworkId(), component);
+                            }
                         }
-                    }
-                    break;
+                        break;
+                }
             }
         }
+        updatedOwnedEntities(entity, component, metadata);
     }
 
     @Override
     public void onEntityComponentRemoved(EntityRef entity, Class<? extends Component> component) {
+        ComponentMetadata<? extends Component> metadata = entitySystemLibrary.getComponentLibrary().getMetadata(component);
         NetworkComponent netComp = entity.getComponent(NetworkComponent.class);
         if (netComp != null && netComp.getNetworkId() != NULL_NET_ID) {
-            ComponentMetadata<? extends Component> metadata = entitySystemLibrary.getComponentLibrary().getMetadata(component);
             switch (mode) {
                 case SERVER:
                     if (metadata.isReplicated()) {
@@ -494,13 +501,19 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
                     break;
             }
         }
+        if (mode.isAuthority() && metadata.isReferenceOwner()) {
+            for (EntityRef ownedEntity : ownershipHelper.listOwnedEntities(entity.getComponent(component))) {
+                ownedEntity.destroy();
+            }
+        }
+
     }
 
     @Override
     public void onEntityComponentChange(EntityRef entity, Class<? extends Component> component) {
         NetworkComponent netComp = entity.getComponent(NetworkComponent.class);
+        ComponentMetadata<? extends Component> metadata = entitySystemLibrary.getComponentLibrary().getMetadata(component);
         if (netComp != null && netComp.getNetworkId() != NULL_NET_ID) {
-            ComponentMetadata<? extends Component> metadata = entitySystemLibrary.getComponentLibrary().getMetadata(component);
             switch (mode) {
                 case SERVER:
                     if (metadata.isReplicated()) {
@@ -514,6 +527,19 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
                         server.setComponentDirty(netComp.getNetworkId(), component);
                     }
                     break;
+            }
+        }
+        updatedOwnedEntities(entity, component, metadata);
+    }
+
+    private void updatedOwnedEntities(EntityRef entity, Class<? extends Component> component, ComponentMetadata<? extends Component> metadata) {
+        if (mode.isAuthority() && metadata.isReferenceOwner()) {
+            for (EntityRef ownedEntity : ownershipHelper.listOwnedEntities(entity.getComponent(component))) {
+                NetworkComponent ownedNetworkComp = ownedEntity.getComponent(NetworkComponent.class);
+                if (ownedNetworkComp != null && !ownedNetworkComp.owner.equals(entity)) {
+                    ownedNetworkComp.owner = entity;
+                    ownedEntity.saveComponent(ownedNetworkComp);
+                }
             }
         }
     }
@@ -734,7 +760,7 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
         eventSerializer.setIdMapping(generateIds(entitySystemLibrary.getEventLibrary()));
     }
 
-    private <T> Map<Class<? extends T>, Integer> generateIds(ClassLibrary<T> classLibrary) {
+    private <T, U extends ClassMetadata<? extends T>> Map<Class<? extends T>, Integer> generateIds(ClassLibrary<T, U> classLibrary) {
         Map<Class<? extends T>, Integer> result = Maps.newHashMap();
         for (ClassMetadata<? extends T> metadata : classLibrary) {
             int index = result.size();
@@ -759,7 +785,7 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
         eventSerializer.setIdMapping(applySerializationInfo(serverInfo.getEventList(), entitySystemLibrary.getEventLibrary()));
     }
 
-    private <T> Map<Class<? extends T>, Integer> applySerializationInfo(List<NetData.SerializationInfo> infoList, ClassLibrary<T> classLibrary) {
+    private <T, U extends ClassMetadata<? extends T>> Map<Class<? extends T>, Integer> applySerializationInfo(List<NetData.SerializationInfo> infoList, ClassLibrary<T, U> classLibrary) {
         Map<Class<? extends T>, Integer> idTable = Maps.newHashMap();
         for (NetData.SerializationInfo info : infoList) {
             ClassMetadata<? extends T> metadata = classLibrary.getMetadata(info.getName());
