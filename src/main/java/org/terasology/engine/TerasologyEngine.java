@@ -392,7 +392,7 @@ public class TerasologyEngine implements GameEngine {
             // Only process rendering and updating once a second
             if (!Display.isActive() && currentState.isHibernationAllowed()) {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     logger.warn("Display inactivity sleep interrupted", e);
                 }
@@ -477,7 +477,7 @@ public class TerasologyEngine implements GameEngine {
         return config.getRendering().isFullscreen();
     }
 
-    public void setFullscreen(Boolean state) {
+    public void setFullscreen(boolean state) {
         if (config.getRendering().isFullscreen() != state) {
             config.getRendering().setFullscreen(state);
             setDisplayMode();

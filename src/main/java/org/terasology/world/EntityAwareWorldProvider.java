@@ -16,6 +16,7 @@
 
 package org.terasology.world;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
@@ -97,7 +98,17 @@ public class EntityAwareWorldProvider extends AbstractWorldProviderDecorator imp
     public boolean setBlock(int x, int y, int z, Block type, Block oldType) {
         if (super.setBlock(x, y, z, type, oldType)) {
             if (Thread.currentThread().equals(mainThread)) {
-                getOrCreateEntityAt(new Vector3i(x, y, z)).send(new BlockChangedEvent(new Vector3i(x, y, z), type, oldType));
+                Vector3i pos = new Vector3i(x, y, z);
+                EntityRef regionEntity = blockRegionLookup.get(pos);
+                if (regionEntity != null) {
+                    regionEntity.send(new BlockChangedEvent(pos, type, oldType));
+                }
+                EntityRef blockEntity = getBlockEntityAt(new Vector3i(x, y, z));
+                if (blockEntity.exists()) {
+                    blockEntity.destroy();
+                }
+                blockEntity = getOrCreateBlockEntityAt(pos);
+                blockEntity.send(new BlockChangedEvent(new Vector3i(x, y, z), type, oldType));
             } else {
                 eventQueue.add(new BlockChangedEvent(new Vector3i(x, y, z), type, oldType));
             }
@@ -161,6 +172,24 @@ public class EntityAwareWorldProvider extends AbstractWorldProviderDecorator imp
         replaceEntityAt(blockPosition, entity, getBlock(blockPosition.x, blockPosition.y, blockPosition.z));
     }
 
+    @Override
+    public boolean setBlockRetainEntity(int x, int y, int z, Block type, Block oldType) {
+        return setBlockRetainEntity(new Vector3i(x, y, z), type, oldType);
+    }
+
+    @Override
+    public boolean setBlockRetainEntity(Vector3i pos, Block type, Block oldType) {
+        if (super.setBlock(pos.x, pos.y, pos.z, type, oldType)) {
+            if (Thread.currentThread().equals(mainThread)) {
+                getOrCreateEntityAt(pos).send(new BlockChangedEvent(pos, type, oldType));
+            } else {
+                eventQueue.add(new BlockChangedEvent(pos, type, oldType));
+            }
+            return true;
+        }
+        return false;
+    }
+
     private void replaceEntityAt(Vector3i blockPosition, EntityRef entity, Block blockType) {
         EntityRef oldEntity = blockComponentLookup.put(blockPosition, entity);
         if (oldEntity != null) {
@@ -192,13 +221,19 @@ public class EntityAwareWorldProvider extends AbstractWorldProviderDecorator imp
     @ReceiveEvent(components = {BlockComponent.class})
     public void onCreate(OnActivatedEvent event, EntityRef entity) {
         BlockComponent block = entity.getComponent(BlockComponent.class);
-        blockComponentLookup.put(new Vector3i(block.getPosition()), entity);
+        EntityRef oldEntity = blockComponentLookup.put(new Vector3i(block.getPosition()), entity);
+        if (oldEntity != null && !Objects.equal(oldEntity, entity)) {
+            oldEntity.destroy();
+        }
     }
 
     @ReceiveEvent(components = {BlockComponent.class})
     public void onDestroy(OnDeactivatedEvent event, EntityRef entity) {
         BlockComponent block = entity.getComponent(BlockComponent.class);
-        blockComponentLookup.remove(new Vector3i(block.getPosition()));
+        Vector3i pos = new Vector3i(block.getPosition());
+        if (blockComponentLookup.get(pos) == entity) {
+            blockComponentLookup.remove(pos);
+        }
     }
 
     @ReceiveEvent(components = {BlockRegionComponent.class})

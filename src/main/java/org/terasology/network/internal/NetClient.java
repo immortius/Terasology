@@ -16,6 +16,7 @@
 
 package org.terasology.network.internal;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -129,6 +130,7 @@ public class NetClient extends AbstractClient implements WorldChangeListener {
         metricSource = (NetMetricSource) channel.getPipeline().get(MetricRecordingHandler.NAME);
         this.networkSystem = networkSystem;
         this.timer = CoreRegistry.get(Timer.class);
+        this.identity = identity;
         CoreRegistry.get(WorldProvider.class).registerListener(this);
     }
 
@@ -472,7 +474,7 @@ public class NetClient extends AbstractClient implements WorldChangeListener {
                 target = networkSystem.getEntity(eventMessage.getTargetId());
             }
             if (target.exists()) {
-                if (networkSystem.getOwner(target).equals(this)) {
+                if (Objects.equal(networkSystem.getOwner(target), this)) {
                     target.send(event);
                 } else {
                     logger.warn("Received event {} for non-owned entity {} from {}", event, target, this);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.terasology.logic.console;
+package org.terasology.logic.chat;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,19 +24,20 @@ import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.systems.In;
 import org.terasology.entitySystem.event.ReceiveEvent;
 import org.terasology.entitySystem.systems.RegisterSystem;
-import org.terasology.logic.manager.MessageManager;
+import org.terasology.logic.console.Command;
+import org.terasology.logic.console.CommandParam;
+import org.terasology.logic.console.Console;
+import org.terasology.logic.players.LocalPlayer;
 import org.terasology.network.ClientComponent;
 import org.terasology.network.NetworkSystem;
 
 /**
+ * This system provides the ability to chat with a "say" command. Chat messages are broadcast to all players.
  * @author Immortius
  */
 @RegisterSystem
-public class MessagingSystem implements ComponentSystem {
-    private static final Logger logger = LoggerFactory.getLogger(MessagingSystem.class);
-
-    @In
-    private NetworkSystem networkSystem;
+public class ChatSystem implements ComponentSystem {
+    private static final Logger logger = LoggerFactory.getLogger(ChatSystem.class);
 
     @In
     private EntityManager entityManager;
@@ -49,23 +50,11 @@ public class MessagingSystem implements ComponentSystem {
     public void shutdown() {
     }
 
-    @ReceiveEvent(components = ClientComponent.class)
-    public void onReceiveMessage(SendChatMessage event, EntityRef entity) {
-        if (networkSystem.getMode().isAuthority()) {
-            logger.info("Received message from {} : '{}'", entity, event.getMessage());
-            for (EntityRef client : entityManager.listEntitiesWith(ClientComponent.class)) {
-                client.send(new ChatMessageEvent(event.getMessage(), entity.getComponent(ClientComponent.class).clientInfo));
-            }
-        }
-
-    }
-
-    @ReceiveEvent(components = ClientComponent.class)
-    public void onChatMessage(MessageEvent event, EntityRef entity) {
-        ClientComponent client = entity.getComponent(ClientComponent.class);
-        if (client.local) {
-            logger.info("Message Received : '{}'", event.getFormattedMessage());
-            MessageManager.getInstance().addMessage(event.getFormattedMessage());
+    @Command(shortDescription = "Sends a message to all other players", runOnServer = true)
+    public void say(@CommandParam("message") String message, EntityRef speaker) {
+        logger.debug("Received chat message from {} : '{}'", speaker, message);
+        for (EntityRef client : entityManager.listEntitiesWith(ClientComponent.class)) {
+            client.send(new ChatMessageEvent(message, speaker.getComponent(ClientComponent.class).clientInfo));
         }
     }
 }

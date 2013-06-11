@@ -17,7 +17,12 @@
 package org.terasology.network.internal;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.*;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Queues;
+import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
@@ -38,14 +43,26 @@ import org.terasology.config.NetworkConfig;
 import org.terasology.engine.ComponentSystemManager;
 import org.terasology.engine.CoreRegistry;
 import org.terasology.engine.Timer;
-import org.terasology.entitySystem.*;
+import org.terasology.entitySystem.Component;
+import org.terasology.entitySystem.EngineEntityManager;
+import org.terasology.entitySystem.EntityChangeSubscriber;
+import org.terasology.entitySystem.EntityRef;
+import org.terasology.entitySystem.OwnershipHelper;
 import org.terasology.entitySystem.event.Event;
-import org.terasology.entitySystem.metadata.*;
+import org.terasology.entitySystem.metadata.ClassLibrary;
+import org.terasology.entitySystem.metadata.ClassMetadata;
+import org.terasology.entitySystem.metadata.ComponentLibrary;
+import org.terasology.entitySystem.metadata.ComponentMetadata;
+import org.terasology.entitySystem.metadata.EntitySystemLibrary;
+import org.terasology.entitySystem.metadata.EventLibrary;
+import org.terasology.entitySystem.metadata.EventMetadata;
+import org.terasology.entitySystem.metadata.FieldMetadata;
+import org.terasology.entitySystem.metadata.TypeHandler;
+import org.terasology.entitySystem.metadata.TypeHandlerLibraryBuilder;
 import org.terasology.entitySystem.metadata.internal.EntitySystemLibraryImpl;
 import org.terasology.entitySystem.persistence.EventSerializer;
 import org.terasology.entitySystem.persistence.PackedEntitySerializer;
 import org.terasology.entitySystem.persistence.PlayerEntityStore;
-import org.terasology.logic.manager.MessageManager;
 import org.terasology.logic.mod.Mod;
 import org.terasology.logic.mod.ModManager;
 import org.terasology.network.Client;
@@ -63,6 +80,7 @@ import org.terasology.performanceMonitor.PerformanceMonitor;
 import org.terasology.protobuf.NetData;
 import org.terasology.world.BlockEntityRegistry;
 import org.terasology.world.WorldProvider;
+import org.terasology.world.block.BlockUri;
 import org.terasology.world.block.family.BlockFamily;
 import org.terasology.world.block.management.BlockManager;
 import org.terasology.world.chunks.remoteChunkProvider.RemoteChunkProvider;
@@ -78,6 +96,7 @@ import java.util.concurrent.Executors;
 
 /**
  * Implementation of the Network System using Netty and TCP/IP
+ *
  * @author Immortius
  */
 public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem {
@@ -126,6 +145,7 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
     public void host(int port) throws HostingFailedException {
         if (mode == NetworkMode.NONE) {
             try {
+                mode = NetworkMode.SERVER;
                 for (EntityRef entity : entityManager.listEntitiesWith(NetworkComponent.class)) {
                     registerNetworkEntity(entity);
                 }
@@ -141,7 +161,6 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
                 logger.info("Started server");
 
                 nextNetworkTick = timer.getRawTimeInMs();
-                mode = NetworkMode.SERVER;
             } catch (ChannelException e) {
                 if (e.getCause() instanceof BindException) {
                     throw new HostingFailedException("Port already in use (are you already hosting a game?)");
@@ -194,6 +213,11 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
         nextNetId = 1;
         netIdToEntityId.clear();
         if (this.entityManager != null) {
+            for (EntityRef entity : entityManager.listEntitiesWith(NetworkComponent.class)) {
+                NetworkComponent netComp = entity.getComponent(NetworkComponent.class);
+                netComp.setNetworkId(0);
+                entity.saveComponent(netComp);
+            }
             this.entityManager.unsubscribe(this);
         }
         entityManager = null;
@@ -329,7 +353,9 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
 
         logger.debug("Registered Network Entity: {}", entity);
 
-        netIdToEntityId.put(netComponent.getNetworkId(), entity.getId());
+        if (NULL_NET_ID != netIdToEntityId.put(netComponent.getNetworkId(), entity.getId())) {
+            logger.error("Registered duplicate network id");
+        }
 
         if (mode == NetworkMode.SERVER) {
             switch (netComponent.replicateMode) {
@@ -356,6 +382,9 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
 
     public void updateNetworkEntity(EntityRef entity) {
         NetworkComponent netComponent = entity.getComponent(NetworkComponent.class);
+        if (netComponent.getNetworkId() == NULL_NET_ID) {
+            return;
+        }
 
         EntityRef lastOwnerEntity = ownerLookup.get(entity);
         if (lastOwnerEntity == null) {
@@ -368,10 +397,12 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
 
             if (!Objects.equal(lastOwner, newOwner)) {
                 recursiveUpdateOwnership(entity, lastOwner, newOwner);
-                int id = netComponent.getNetworkId();
-                for (Component component : entity.iterateComponents()) {
-                    if (entitySystemLibrary.getComponentLibrary().getMetadata(component.getClass()).isReplicated()) {
-                        newOwner.setComponentDirty(id, component.getClass());
+                if (newOwner != null) {
+                    int id = netComponent.getNetworkId();
+                    for (Component component : entity.iterateComponents()) {
+                        if (entitySystemLibrary.getComponentLibrary().getMetadata(component.getClass()).isReplicated()) {
+                            newOwner.setComponentDirty(id, component.getClass());
+                        }
                     }
                 }
             }
@@ -418,6 +449,8 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
                     client.setNetRemoved(netComponent.getNetworkId());
                 }
             }
+            netComponent.setNetworkId(NULL_NET_ID);
+            entity.saveComponent(netComponent);
         }
         ownerLookup.remove(entity);
     }
@@ -644,8 +677,8 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
     private void processRemovedClient(Client client) {
         netClientList.remove(client);
         clientList.remove(client);
+        clientPlayerLookup.remove(client.getEntity());
         logger.info("Client disconnected: " + client.getName());
-        MessageManager.getInstance().addMessage("Client disconnected: " + client.getName());
         PlayerEntityStore playerStore = new PlayerEntityStore(client.getId(), entityManager);
         playerStore.beginStore();
         client.getEntity().send(new DisconnectedEvent(playerStore));
@@ -670,16 +703,18 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
         logger.info("New client entity: {}", client.getEntity());
         for (EntityRef netEntity : entityManager.listEntitiesWith(NetworkComponent.class)) {
             NetworkComponent netComp = netEntity.getComponent(NetworkComponent.class);
-            switch (netComp.replicateMode) {
-                case OWNER:
-                    if (client.equals(getOwner(netEntity))) {
+            if (netComp.getNetworkId() != NULL_NET_ID) {
+                switch (netComp.replicateMode) {
+                    case OWNER:
+                        if (client.equals(getOwner(netEntity))) {
+                            client.setNetInitial(netComp.getNetworkId());
+                        }
+                        break;
+                    default:
+                        // TODO: Relevance Check
                         client.setNetInitial(netComp.getNetworkId());
-                    }
-                    break;
-                default:
-                    // TODO: Relevance Check
-                    client.setNetInitial(netComp.getNetworkId());
-                    break;
+                        break;
+                }
             }
         }
     }
@@ -709,6 +744,9 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
         for (Map.Entry<String, Byte> blockMapping : blockManager.getBlockIdMap().entrySet()) {
             serverInfoMessageBuilder.addBlockId(blockMapping.getValue());
             serverInfoMessageBuilder.addBlockName(blockMapping.getKey());
+        }
+        for (BlockFamily registeredBlockFamily : blockManager.listRegisteredBlockFamilies()) {
+            serverInfoMessageBuilder.addRegisterBlockFamily(registeredBlockFamily.getURI().toString());
         }
         serializeComponentInfo(serverInfoMessageBuilder);
         serializeEventInfo(serverInfoMessageBuilder);

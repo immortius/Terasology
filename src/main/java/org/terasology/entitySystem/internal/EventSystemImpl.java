@@ -117,10 +117,10 @@ public class EventSystemImpl implements EventSystem {
     }
 
     /**
-     * Events are added to the lifecycleEvents library if they have a network annotation
+     * Events are added to the event library if they have a network annotation
      *
      * @param eventType
-     * @return Whether the lifecycleEvents should be added to the lifecycleEvents library
+     * @return Whether the event should be added to the event library
      */
     private boolean shouldAddToLibrary(Class<? extends Event> eventType) {
         return eventType.getAnnotation(ServerEvent.class) != null
@@ -140,9 +140,10 @@ public class EventSystemImpl implements EventSystem {
         for (Method method : handlerClass.getMethods()) {
             ReceiveEvent receiveEventAnnotation = method.getAnnotation(ReceiveEvent.class);
             if (receiveEventAnnotation != null) {
-                if (!Modifier.isPublic(method.getModifiers())) {
-                    method.setAccessible(true);
+                if (!receiveEventAnnotation.netFilter().isValidFor(networkSystem.getMode())) {
+                    continue;
                 }
+                method.setAccessible(true);
                 Class<?>[] types = method.getParameterTypes();
 
                 if (types.length == 2 && Event.class.isAssignableFrom(types[0]) && EntityRef.class.isAssignableFrom(types[1])) {

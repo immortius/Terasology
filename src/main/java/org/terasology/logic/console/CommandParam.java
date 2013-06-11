@@ -16,30 +16,17 @@
 
 package org.terasology.logic.console;
 
-import org.terasology.network.OwnerEvent;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Simple message lifecycleEvents. Not ideal in general, but useful for quickly getting things working.
- *
+ * Used to provide the name of a Command's params (since the names are otherwise unavailable)
  * @author Immortius
  */
-@OwnerEvent
-public class SimpleMessageEvent extends MessageEvent {
-    private String message;
-
-    protected SimpleMessageEvent() {
-    }
-
-    public SimpleMessageEvent(String message) {
-        this.message = message;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    @Override
-    public String getFormattedMessage() {
-        return message;
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.PARAMETER)
+public @interface CommandParam {
+    String value();
 }

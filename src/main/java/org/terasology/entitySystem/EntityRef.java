@@ -38,12 +38,17 @@ public abstract class EntityRef implements ComponentContainer {
     public abstract boolean exists();
 
     /**
+     * @return Whether this entity is currently loaded (not persisted)
+     */
+    public abstract boolean isLoaded();
+
+    /**
      * Removes all components from this entity, effectively destroying it
      */
     public abstract void destroy();
 
     /**
-     * Transmits an lifecycleEvents to this entity
+     * Transmits an event to this entity
      *
      * @param event
      */
@@ -68,4 +73,5 @@ public abstract class EntityRef implements ComponentContainer {
         serializer.setUsingFieldIds(false);
         return EntityDataJSONFormat.write(serializer.serialize(this));
     }
+
 }
