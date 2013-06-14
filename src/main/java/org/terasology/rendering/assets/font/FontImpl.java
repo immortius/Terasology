@@ -5,7 +5,7 @@ import org.newdawn.slick.Color;
 import org.terasology.asset.AbstractAsset;
 import org.terasology.asset.AssetUri;
 import org.terasology.logic.manager.ShaderManager;
-import org.terasology.rendering.assets.opengl.OpenGLTexture;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.rendering.assets.texture.Texture;
 
 import static org.lwjgl.opengl.GL11.GL_TRIANGLE_FAN;

@@ -14,23 +14,36 @@
  * limitations under the License.
  */
 
-package org.terasology.rendering.assets.metadata;
-
-import com.google.common.collect.Lists;
-
-import java.util.List;
+package org.terasology.rendering.assets.shader;
 
 /**
  * @author Immortius
  */
-public class ShaderMetadata {
-    List<ParamMetadata> parameters = Lists.newArrayList();
+public class ShaderParameterMetadata {
+    String name;
+    ParamType type;
 
-    public List<ParamMetadata> getParameters() {
-        return parameters;
+    public ShaderParameterMetadata() {
     }
 
-    public void setParameters(List<ParamMetadata> parameters) {
-        this.parameters = parameters;
+    public ShaderParameterMetadata(String name, ParamType type) {
+        this.name = name;
+        this.type = type;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public ParamType getType() {
+        return type;
+    }
+
+    public void setType(ParamType type) {
+        this.type = type;
     }
 }

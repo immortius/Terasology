@@ -18,6 +18,7 @@ package org.terasology.rendering.primitives;
 import gnu.trove.list.array.TFloatArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import org.terasology.asset.AssetUri;
+import org.terasology.rendering.assets.mesh.Mesh;
 import org.terasology.world.block.shapes.BlockMeshPart;
 
 import javax.vecmath.Vector2f;

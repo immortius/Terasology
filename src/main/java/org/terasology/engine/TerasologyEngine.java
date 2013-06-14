@@ -24,8 +24,6 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.asset.Asset;
-import org.terasology.asset.AssetData;
 import org.terasology.asset.AssetFactory;
 import org.terasology.asset.AssetManager;
 import org.terasology.asset.AssetType;
@@ -51,6 +49,10 @@ import org.terasology.physics.CollisionGroupManager;
 import org.terasology.rendering.assets.font.Font;
 import org.terasology.rendering.assets.font.FontData;
 import org.terasology.rendering.assets.font.FontImpl;
+import org.terasology.rendering.assets.shader.ShaderData;
+import org.terasology.rendering.assets.texture.TextureData;
+import org.terasology.rendering.opengl.OpenGLShader;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.utilities.NativeHelper;
 import org.terasology.version.TerasologyVersion;
 
@@ -62,7 +64,13 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
+import static org.lwjgl.opengl.GL11.GL_LEQUAL;
+import static org.lwjgl.opengl.GL11.GL_NORMALIZE;
+import static org.lwjgl.opengl.GL11.glDepthFunc;
+import static org.lwjgl.opengl.GL11.glEnable;
+import static org.lwjgl.opengl.GL11.glViewport;
 
 /**
  * @author Immortius
@@ -300,6 +308,18 @@ public class TerasologyEngine implements GameEngine {
         checkOpenGL();
         resizeViewport();
         initOpenGLParams();
+        AssetManager.getInstance().setAssetFactory(AssetType.TEXTURE, new AssetFactory<TextureData, OpenGLTexture>() {
+            @Override
+            public OpenGLTexture buildAsset(AssetUri uri, TextureData data) {
+                return new OpenGLTexture(uri, data);
+            }
+        });
+        AssetManager.getInstance().setAssetFactory(AssetType.SHADER, new AssetFactory<ShaderData, OpenGLShader>() {
+            @Override
+            public OpenGLShader buildAsset(AssetUri uri, ShaderData data) {
+                return new OpenGLShader(uri, data);
+            }
+        });
         AssetManager.getInstance().setAssetFactory(AssetType.FONT, new AssetFactory<FontData, Font>() {
             @Override
             public Font buildAsset(AssetUri uri, FontData data) {

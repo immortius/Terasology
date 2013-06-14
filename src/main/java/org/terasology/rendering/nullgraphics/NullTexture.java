@@ -1,4 +1,4 @@
-package org.terasology.rendering.assets.nullgraphics;
+package org.terasology.rendering.nullgraphics;
 
 import org.terasology.asset.AbstractAsset;
 import org.terasology.asset.AssetUri;

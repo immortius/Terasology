@@ -45,7 +45,7 @@ import org.terasology.engine.paths.PathManager;
 import org.terasology.math.Rotation;
 import org.terasology.math.Side;
 import org.terasology.math.TeraMath;
-import org.terasology.rendering.assets.Material;
+import org.terasology.rendering.assets.material.Material;
 import org.terasology.rendering.assets.texture.Texture;
 import org.terasology.utilities.gson.Vector4fHandler;
 import org.terasology.world.block.Block;

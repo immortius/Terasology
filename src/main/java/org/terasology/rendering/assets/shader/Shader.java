@@ -14,14 +14,29 @@
  * limitations under the License.
  */
 
-package org.terasology.physics.shapes;
+package org.terasology.rendering.assets.shader;
 
-import org.terasology.entitySystem.Component;
-import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.asset.Asset;
 
 /**
  * @author Immortius
  */
-public class HullShapeComponent implements Component {
-    public Mesh sourceMesh;
+public interface Shader extends Asset<ShaderData> {
+
+    /**
+     * Recompiles the shader
+     */
+    void recompile();
+
+    /**
+     * @param desc
+     * @return The desired shader param, or null if there isn't one with that name
+     */
+    ShaderParameterMetadata getParameter(String desc);
+
+    /**
+     * @return The list of parameters this shader has
+     */
+    Iterable<ShaderParameterMetadata> listParameters();
+
 }

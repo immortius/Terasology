@@ -16,6 +16,7 @@
 package org.terasology.rendering.primitives;
 
 import org.terasology.asset.Assets;
+import org.terasology.rendering.assets.mesh.Mesh;
 import org.terasology.rendering.assets.texture.Texture;
 
 import javax.vecmath.Vector4f;

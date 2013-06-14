@@ -33,7 +33,7 @@ import org.terasology.math.TeraMath;
 import org.terasology.model.inventory.Icon;
 import org.terasology.rendering.assets.texture.Texture;
 import org.terasology.rendering.gui.widgets.UIInventoryGrid;
-import org.terasology.rendering.primitives.Mesh;
+import org.terasology.rendering.assets.mesh.Mesh;
 import org.terasology.rendering.primitives.MeshFactory;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;

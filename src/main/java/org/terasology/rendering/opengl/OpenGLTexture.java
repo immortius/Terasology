@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.terasology.rendering.assets.opengl;
+package org.terasology.rendering.opengl;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -41,7 +41,6 @@ public class OpenGLTexture extends AbstractAsset<TextureData> implements Texture
     private int height;
     private WrapMode wrapMode = WrapMode.Clamp;
     private FilterMode filterMode = FilterMode.Nearest;
-    private ByteBuffer[] data;
 
     public OpenGLTexture(AssetUri uri, TextureData data) {
         super(uri);
