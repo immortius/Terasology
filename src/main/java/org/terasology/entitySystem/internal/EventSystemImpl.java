@@ -29,11 +29,12 @@ import com.google.common.collect.Sets;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.entitySystem.event.AbstractEvent;
+import org.terasology.entitySystem.event.AbstractConsumableEvent;
+import org.terasology.entitySystem.event.ConsumableEvent;
+import org.terasology.entitySystem.event.Event;
 import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.systems.ComponentSystem;
 import org.terasology.entitySystem.EntityRef;
-import org.terasology.entitySystem.event.Event;
 import org.terasology.entitySystem.event.EventPriority;
 import org.terasology.entitySystem.event.EventReceiver;
 import org.terasology.entitySystem.event.EventSystem;
@@ -48,7 +49,7 @@ import org.terasology.network.NetworkMode;
 import org.terasology.network.NetworkSystem;
 import org.terasology.network.OwnerEvent;
 import org.terasology.network.ServerEvent;
-import org.terasology.world.block.entity.BlockComponent;
+import org.terasology.world.block.BlockComponent;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -107,7 +108,7 @@ public class EventSystemImpl implements EventSystem {
         }
         logger.debug("Registering event {}", eventType.getSimpleName());
         for (Class parent : Reflections.getAllSuperTypes(eventType, Predicates.assignableFrom(Event.class))) {
-            if (!AbstractEvent.class.equals(parent) && !Event.class.equals(parent)) {
+            if (!AbstractConsumableEvent.class.equals(parent) && !Event.class.equals(parent)) {
                 childEvents.put(parent, eventType);
             }
         }
@@ -216,12 +217,31 @@ public class EventSystemImpl implements EventSystem {
             List<EventHandlerInfo> selectedHandlers = Lists.newArrayList(selectedHandlersSet);
             Collections.sort(selectedHandlers, priorityComparator);
 
-            for (EventHandlerInfo handler : selectedHandlers) {
-                // Check isValid at each stage in case components were removed.
-                if (handler.isValidFor(entity)) {
-                    handler.invoke(entity, event);
-                    if (event.isCancelled())
-                        return;
+            if (event instanceof ConsumableEvent) {
+                sendConsumableEvent(entity, event, selectedHandlers);
+            } else {
+                sendStandardEvent(entity, event, selectedHandlers);
+            }
+        }
+    }
+
+    private void sendStandardEvent(EntityRef entity, Event event, List<EventHandlerInfo> selectedHandlers) {
+        for (EventHandlerInfo handler : selectedHandlers) {
+            // Check isValid at each stage in case components were removed.
+            if (handler.isValidFor(entity)) {
+                handler.invoke(entity, event);
+            }
+        }
+    }
+
+    private void sendConsumableEvent(EntityRef entity, Event event, List<EventHandlerInfo> selectedHandlers) {
+        ConsumableEvent consumableEvent = (ConsumableEvent) event;
+        for (EventHandlerInfo handler : selectedHandlers) {
+            // Check isValid at each stage in case components were removed.
+            if (handler.isValidFor(entity)) {
+                handler.invoke(entity, event);
+                if (consumableEvent.isConsumed()) {
+                    return;
                 }
             }
         }

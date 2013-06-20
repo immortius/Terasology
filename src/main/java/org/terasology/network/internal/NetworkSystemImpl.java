@@ -80,7 +80,6 @@ import org.terasology.performanceMonitor.PerformanceMonitor;
 import org.terasology.protobuf.NetData;
 import org.terasology.world.BlockEntityRegistry;
 import org.terasology.world.WorldProvider;
-import org.terasology.world.block.BlockUri;
 import org.terasology.world.block.family.BlockFamily;
 import org.terasology.world.block.management.BlockManager;
 import org.terasology.world.chunks.remoteChunkProvider.RemoteChunkProvider;
@@ -146,7 +145,7 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
         if (mode == NetworkMode.NONE) {
             try {
                 mode = NetworkMode.SERVER;
-                for (EntityRef entity : entityManager.listEntitiesWith(NetworkComponent.class)) {
+                for (EntityRef entity : entityManager.getEntitiesWith(NetworkComponent.class)) {
                     registerNetworkEntity(entity);
                 }
                 generateSerializationTables();
@@ -213,7 +212,7 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
         nextNetId = 1;
         netIdToEntityId.clear();
         if (this.entityManager != null) {
-            for (EntityRef entity : entityManager.listEntitiesWith(NetworkComponent.class)) {
+            for (EntityRef entity : entityManager.getEntitiesWith(NetworkComponent.class)) {
                 NetworkComponent netComp = entity.getComponent(NetworkComponent.class);
                 netComp.setNetworkId(0);
                 entity.saveComponent(netComp);
@@ -701,7 +700,7 @@ public class NetworkSystemImpl implements EntityChangeSubscriber, NetworkSystem 
         connectClient(client);
 
         logger.info("New client entity: {}", client.getEntity());
-        for (EntityRef netEntity : entityManager.listEntitiesWith(NetworkComponent.class)) {
+        for (EntityRef netEntity : entityManager.getEntitiesWith(NetworkComponent.class)) {
             NetworkComponent netComp = netEntity.getComponent(NetworkComponent.class);
             if (netComp.getNetworkId() != NULL_NET_ID) {
                 switch (netComp.replicateMode) {

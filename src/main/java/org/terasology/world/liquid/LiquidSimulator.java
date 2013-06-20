@@ -18,25 +18,25 @@ package org.terasology.world.liquid;
 import com.google.common.collect.Queues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.world.WorldComponent;
-import org.terasology.entitySystem.systems.ComponentSystem;
 import org.terasology.entitySystem.EntityRef;
-import org.terasology.entitySystem.systems.In;
-import org.terasology.entitySystem.event.ReceiveEvent;
 import org.terasology.entitySystem.RegisterMode;
+import org.terasology.entitySystem.event.ReceiveEvent;
+import org.terasology.entitySystem.systems.ComponentSystem;
+import org.terasology.entitySystem.systems.In;
 import org.terasology.entitySystem.systems.RegisterSystem;
 import org.terasology.math.Region3i;
 import org.terasology.math.Side;
 import org.terasology.math.TeraMath;
 import org.terasology.math.Vector3i;
-import org.terasology.world.BlockChangedEvent;
+import org.terasology.world.OnChangedBlock;
 import org.terasology.world.ChunkView;
+import org.terasology.world.WorldComponent;
 import org.terasology.world.WorldProvider;
 import org.terasology.world.block.Block;
-import org.terasology.world.block.entity.BlockComponent;
+import org.terasology.world.block.BlockComponent;
 import org.terasology.world.block.management.BlockManager;
 import org.terasology.world.chunks.Chunk;
-import org.terasology.world.chunks.ChunkReadyEvent;
+import org.terasology.world.chunks.OnChunkLoaded;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -132,12 +132,12 @@ public class LiquidSimulator implements ComponentSystem {
     }
 
     @ReceiveEvent(components = WorldComponent.class)
-    public void chunkReady(ChunkReadyEvent event, EntityRef worldEntity) {
+    public void chunkReady(OnChunkLoaded event, EntityRef worldEntity) {
         blockQueue.offer(new ReviewChunk(event.getChunkPos()));
     }
 
     @ReceiveEvent(components = BlockComponent.class)
-    public void blockChanged(BlockChangedEvent event, EntityRef blockEntity) {
+    public void blockChanged(OnChangedBlock event, EntityRef blockEntity) {
         if (!event.getNewType().isLiquid()) {
             LiquidData currentState = world.getLiquid(event.getBlockPosition());
             if (currentState.getDepth() > 0) {
@@ -170,7 +170,6 @@ public class LiquidSimulator implements ComponentSystem {
         LiquidData current = view.getLiquid(blockPos);
         LiquidData newState = calcStateFor(blockPos, view);
         if (!newState.equals(current)) {
-            view.lock();
             try {
                 if (view.isValidView() && world.setLiquid(blockPos, newState, current)) {
                     if (newState.getDepth() > 0) {
@@ -329,11 +328,17 @@ public class LiquidSimulator implements ComponentSystem {
             ChunkView view = world.getLocalView(chunkPos);
             if (view != null) {
                 for (Vector3i pos : Region3i.createFromMinAndSize(new Vector3i(-1, 0, -1), new Vector3i(Chunk.SIZE_X + 2, Chunk.SIZE_Y, Chunk.SIZE_Z + 2))) {
-                    LiquidData state = view.getLiquid(pos);
-                    LiquidData newState = calcStateFor(pos, view);
-                    if (!newState.equals(state)) {
-                        blockQueue.offer(new SimulateBlock(view.toWorldPos(pos), 0));
+                    view.lock();
+                    try {
+                        LiquidData state = view.getLiquid(pos);
+                        LiquidData newState = calcStateFor(pos, view);
+                        if (!newState.equals(state)) {
+                            blockQueue.offer(new SimulateBlock(view.toWorldPos(pos), 0));
+                        }
+                    } finally {
+                        view.unlock();
                     }
+
                 }
             }
         }

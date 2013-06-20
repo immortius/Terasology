@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.terasology.asset.AssetManager;
 import org.terasology.asset.AssetType;
 import org.terasology.asset.AssetUri;
+import org.terasology.entitySystem.EntityRef;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.AABB;
 import org.terasology.math.Side;
@@ -59,7 +60,7 @@ import static org.lwjgl.opengl.GL11.glIsEnabled;
  * @author Benjamin Glatzel <benjamin.glatzel@me.com>
  * @author Rasmus 'Cervator' Praestholm <cervator@gmail.com>
  */
-// TODO: Make this immutable, add a block builder class
+// TODO: Make this immutable, add a block builder class?
 public class Block {
     public static final float TEXTURE_OFFSET = 0.0625f;
     public static final float TEXTURE_OFFSET_WIDTH = 0.0624f;
@@ -163,8 +164,10 @@ public class Block {
     private boolean debrisOnDestroy = true;
 
     // Entity integration
-    private String entityPrefab = "";
-    private BlockEntityMode entityMode = BlockEntityMode.ON_INTERACTION;
+    private String prefab = "";
+    private boolean keepActive = false;
+    private EntityRef entity = EntityRef.NULL;
+    private boolean lifecycleEventsRequired = false;
 
     // Inventory settings
     private boolean directPickup = false;
@@ -366,23 +369,36 @@ public class Block {
     /**
      * @return The entity prefab for this block
      */
-    public String getEntityPrefab() {
-        return entityPrefab;
+    public String getPrefab() {
+        return prefab;
     }
 
-    public void setEntityPrefab(String value) {
-        entityPrefab = (value == null) ? "" : value;
+    public void setPrefab(String value) {
+        prefab = (value == null) ? "" : value;
     }
 
-    public BlockEntityMode getEntityMode() {
-        if (stackable && entityMode == BlockEntityMode.PERSISTENT) {
-            return BlockEntityMode.WHILE_PLACED;
-        }
-        return entityMode;
+    public boolean isKeepActive() {
+        return keepActive;
     }
 
-    public void setEntityMode(BlockEntityMode entityMode) {
-        this.entityMode = entityMode;
+    public void setKeepActive(boolean keepActive) {
+        this.keepActive = keepActive;
+    }
+
+    public EntityRef getEntity() {
+        return entity;
+    }
+
+    public void setEntity(EntityRef entity) {
+        this.entity = entity;
+    }
+
+    public void setLifecycleEventsRequired(boolean lifecycleEventsRequired) {
+        this.lifecycleEventsRequired = lifecycleEventsRequired;
+    }
+
+    public boolean isLifecycleEventsRequired() {
+        return lifecycleEventsRequired;
     }
 
     /**
@@ -612,6 +628,9 @@ public class Block {
 
         if (mesh == null) {
             generateMesh();
+            if (mesh == null) {
+                return;
+            }
         } else if (mesh.isDisposed()) {
             logger.error("Cannot render disposed mesh");
             return;

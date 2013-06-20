@@ -16,7 +16,12 @@
 
 package org.terasology.world.block.loader;
 
+import com.google.common.collect.Lists;
+import org.terasology.entitySystem.common.NullIterator;
 import org.terasology.world.block.BlockUri;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A freeform family is a pseudo block family that can be combined with any block shape to produce an actual block
@@ -26,14 +31,14 @@ import org.terasology.world.block.BlockUri;
  */
 public class FreeformFamily {
     public BlockUri uri;
-    public String[] categories = new String[0];
+    public List<String> categories;
 
     public FreeformFamily(BlockUri uri) {
-        this.uri = uri;
+        this(uri, NullIterator.<String>newInstance());
     }
 
-    public FreeformFamily(BlockUri uri, String[] categories) {
-        this(uri);
-        this.categories = categories;
+    public FreeformFamily(BlockUri uri, Iterable<String> categories) {
+        this.uri = uri;
+        this.categories = Lists.newArrayList(categories);
     }
 }

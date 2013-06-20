@@ -23,14 +23,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.asset.Assets;
 import org.terasology.audio.AudioManager;
-import org.terasology.entitySystem.systems.RenderSystem;
 import org.terasology.config.Config;
 import org.terasology.engine.ComponentSystemManager;
 import org.terasology.engine.CoreRegistry;
 import org.terasology.engine.GameEngine;
 import org.terasology.engine.Timer;
-import org.terasology.logic.characters.CharacterComponent;
 import org.terasology.engine.paths.PathManager;
+import org.terasology.entitySystem.systems.RenderSystem;
+import org.terasology.logic.characters.CharacterComponent;
 import org.terasology.logic.manager.PostProcessingRenderer;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.logic.manager.WorldTimeEventManager;
@@ -179,15 +179,10 @@ public final class WorldRenderer {
     /**
      * Initializes a new (local) world for the single player mode.
      *
-     * @param worldInfo Information describing the world
      */
-    public WorldRenderer(WorldInfo worldInfo, ChunkProvider chunkProvider, LocalPlayerSystem localPlayerSystem) {
+    public WorldRenderer(WorldProvider worldProvider, ChunkProvider chunkProvider, LocalPlayerSystem localPlayerSystem) {
         this.chunkProvider = chunkProvider;
-        BlockManager blockManager = CoreRegistry.get(BlockManager.class);
-        EntityAwareWorldProvider entityWorldProvider = new EntityAwareWorldProvider(new WorldProviderCoreImpl(worldInfo, this.chunkProvider, blockManager));
-        CoreRegistry.put(BlockEntityRegistry.class, entityWorldProvider);
-        CoreRegistry.get(ComponentSystemManager.class).register(entityWorldProvider, "engine:BlockEntityRegistry");
-        worldProvider = new WorldProviderWrapper(entityWorldProvider);
+        this.worldProvider = worldProvider;
         bulletPhysics = new BulletPhysics(worldProvider);
         chunkTesselator = new ChunkTessellator(worldProvider.getBiomeProvider());
         skysphere = new Skysphere(this);
@@ -787,7 +782,7 @@ public final class WorldRenderer {
      */
     public final int maxHeightAt(int x, int z) {
         for (int y = Chunk.SIZE_Y - 1; y >= 0; y--) {
-            if (worldProvider.getBlock(x, y, z).getId() != 0x0)
+            if (!worldProvider.getBlock(x, y, z).isInvisible())
                 return y;
         }
 

@@ -29,14 +29,14 @@ import gnu.trove.set.hash.TIntHashSet;
 import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.entitySystem.Component;
-import org.terasology.entitySystem.EntityRef;
-import org.terasology.entitySystem.event.Event;
-import org.terasology.entitySystem.EngineEntityManager;
-import org.terasology.entitySystem.persistence.EventSerializer;
-import org.terasology.entitySystem.persistence.PackedEntitySerializer;
 import org.terasology.engine.CoreRegistry;
 import org.terasology.engine.Timer;
+import org.terasology.entitySystem.Component;
+import org.terasology.entitySystem.EngineEntityManager;
+import org.terasology.entitySystem.EntityRef;
+import org.terasology.entitySystem.event.Event;
+import org.terasology.entitySystem.persistence.EventSerializer;
+import org.terasology.entitySystem.persistence.PackedEntitySerializer;
 import org.terasology.math.TeraMath;
 import org.terasology.math.Vector3i;
 import org.terasology.network.NetMetricSource;
@@ -49,9 +49,9 @@ import org.terasology.world.BlockEntityRegistry;
 import org.terasology.world.WorldProvider;
 import org.terasology.world.block.Block;
 import org.terasology.world.block.BlockUri;
-import org.terasology.world.block.entity.BlockComponent;
+import org.terasology.world.block.BlockComponent;
 import org.terasology.world.block.management.BlockManager;
-import org.terasology.world.block.management.BlockManagerClient;
+import org.terasology.world.block.management.BlockManagerImpl;
 import org.terasology.world.chunks.Chunk;
 import org.terasology.world.chunks.Chunks;
 import org.terasology.world.chunks.remoteChunkProvider.ChunkReadyListener;
@@ -81,7 +81,7 @@ public class Server implements ChunkReadyListener {
     private EngineEntityManager entityManager;
     private PackedEntitySerializer entitySerializer;
     private EventSerializer eventSerializer;
-    private BlockManagerClient blockManagerClient;
+    private BlockManagerImpl blockManager;
 
     private BlockEntityRegistry blockEntityRegistry;
     private RemoteChunkProvider remoteWorldProvider;
@@ -106,7 +106,7 @@ public class Server implements ChunkReadyListener {
         this.eventSerializer = eventSerializer;
         this.entitySerializer = entitySerializer;
         this.blockEntityRegistry = blockEntityRegistry;
-        blockManagerClient = (BlockManagerClient) CoreRegistry.get(BlockManager.class);
+        blockManager = (BlockManagerImpl) CoreRegistry.get(BlockManager.class);
     }
 
     void setServerInfo(NetData.ServerInfoMessage serverInfo) {
@@ -198,7 +198,7 @@ public class Server implements ChunkReadyListener {
         Event event = eventSerializer.deserialize(message.getEvent());
         EntityRef target = EntityRef.NULL;
         if (message.hasTargetBlockPos()) {
-            target = blockEntityRegistry.getOrCreateBlockEntityAt(NetMessageUtil.convert(message.getTargetBlockPos()));
+            target = blockEntityRegistry.getBlockEntityAt(NetMessageUtil.convert(message.getTargetBlockPos()));
         } else if (message.hasTargetId()) {
             target = networkSystem.getEntity(message.getTargetId());
         }
@@ -298,7 +298,7 @@ public class Server implements ChunkReadyListener {
                 for (int i = 0; i < blockFamily.getBlockIdCount(); ++i) {
                     registrationMap.put(blockFamily.getBlockUri(i), blockFamily.getBlockId(i));
                 }
-                blockManagerClient.receiveFamilyRegistration(family, registrationMap);
+                blockManager.receiveFamilyRegistration(family, registrationMap);
             }
         }
     }
@@ -316,7 +316,7 @@ public class Server implements ChunkReadyListener {
             entitySerializer.deserializeOnto(currentEntity, updateEntity.getEntity());
             BlockComponent blockComponent = currentEntity.getComponent(BlockComponent.class);
             if (blockComponent != null && !blockEntityBefore) {
-                if (!blockEntityRegistry.getBlockEntityAt(blockComponent.getPosition()).equals(currentEntity)) {
+                if (!blockEntityRegistry.getExistingBlockEntityAt(blockComponent.getPosition()).equals(currentEntity)) {
                     logger.error("Failed to associated new block entity");
                 }
             }

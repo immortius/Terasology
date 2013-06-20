@@ -20,18 +20,18 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.terasology.TerasologyTestingEnvironment;
-import org.terasology.entitySystem.EntityRef;
-import org.terasology.entitySystem.EngineEntityManager;
-import org.terasology.entitySystem.metadata.EntitySystemLibrary;
 import org.terasology.engine.ComponentSystemManager;
 import org.terasology.engine.CoreRegistry;
 import org.terasology.engine.Timer;
 import org.terasology.engine.bootstrap.EntitySystemBuilder;
+import org.terasology.entitySystem.EngineEntityManager;
+import org.terasology.entitySystem.EntityRef;
+import org.terasology.entitySystem.metadata.EntitySystemLibrary;
 import org.terasology.logic.mod.ModManager;
 import org.terasology.network.NetworkComponent;
 import org.terasology.world.BlockEntityRegistry;
 import org.terasology.world.block.management.BlockManager;
-import org.terasology.world.block.management.BlockManagerAuthority;
+import org.terasology.world.block.management.BlockManagerImpl;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -42,8 +42,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author Immortius
  */
-public class NetworkOwnershipTest extends TerasologyTestingEnvironment
-{
+public class NetworkOwnershipTest extends TerasologyTestingEnvironment {
 
     private static EngineEntityManager entityManager;
     private NetworkSystemImpl networkSystem;
@@ -55,16 +54,17 @@ public class NetworkOwnershipTest extends TerasologyTestingEnvironment
     public static void initialise() {
         ModManager modManager = new ModManager();
         CoreRegistry.put(ModManager.class, modManager);
-        entityManager = new EntitySystemBuilder().build(modManager);
     }
 
     @Before
     public void setup() {
-        CoreRegistry.put(ComponentSystemManager.class, new ComponentSystemManager());
-        CoreRegistry.put(BlockManager.class, new BlockManagerAuthority());
-        entityManager.clear();
         mockTimer = mock(Timer.class);
         networkSystem = new NetworkSystemImpl(mockTimer);
+
+        entityManager = new EntitySystemBuilder().build(CoreRegistry.get(ModManager.class), networkSystem);
+        CoreRegistry.put(ComponentSystemManager.class, new ComponentSystemManager());
+        CoreRegistry.put(BlockManager.class, new BlockManagerImpl());
+        entityManager.clear();
         client = mock(NetClient.class);
         NetworkComponent clientNetComp = new NetworkComponent();
         clientNetComp.replicateMode = NetworkComponent.ReplicateMode.OWNER;

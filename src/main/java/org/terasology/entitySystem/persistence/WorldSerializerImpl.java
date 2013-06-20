@@ -68,8 +68,8 @@ public class WorldSerializerImpl implements WorldSerializer {
         }
 
         TIntList nonPersistedIds = new TIntArrayList();
-        for (EntityRef entity : entityManager.listEntities()) {
-            if (verbose || entity.isPersisted()) {
+        for (EntityRef entity : entityManager.getAllEntities()) {
+            if (verbose || entity.isPersistent()) {
                 world.addEntity(entitySerializer.serialize(entity));
             } else {
                 nonPersistedIds.add(entity.getId());

@@ -17,6 +17,7 @@ package org.terasology.rendering.logic;
 
 import org.terasology.entitySystem.Component;
 import org.terasology.network.Replicate;
+import org.terasology.world.block.ForceBlockActive;
 import org.terasology.rendering.assets.material.Material;
 import org.terasology.rendering.assets.mesh.Mesh;
 
@@ -25,6 +26,7 @@ import javax.vecmath.Color4f;
 /**
  * @author Immortius <immortius@gmail.com>
  */
+@ForceBlockActive
 public final class MeshComponent implements Component {
 
     // Temporary render details
