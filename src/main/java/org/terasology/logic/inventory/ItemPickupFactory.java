@@ -28,8 +28,8 @@ import org.terasology.entitySystem.prefab.PrefabManager;
 import org.terasology.engine.CoreRegistry;
 import org.terasology.model.inventory.Icon;
 import org.terasology.physics.RigidBodyComponent;
+import org.terasology.rendering.assets.mesh.Mesh;
 import org.terasology.rendering.logic.MeshComponent;
-import org.terasology.rendering.primitives.Mesh;
 import org.terasology.rendering.primitives.MeshFactory;
 import org.terasology.world.block.items.BlockItemComponent;
 

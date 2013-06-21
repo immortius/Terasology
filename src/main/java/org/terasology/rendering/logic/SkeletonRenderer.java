@@ -85,7 +85,7 @@ public class SkeletonRenderer implements RenderSystem, UpdateSubscriberSystem {
 
         if (skeleton.boneEntities == null) {
             skeleton.boneEntities = Maps.newHashMap();
-            for (Bone bone : skeleton.mesh.bones()) {
+            for (Bone bone : skeleton.mesh.getBones()) {
                 LocationComponent loc = new LocationComponent();
                 loc.setLocalPosition(bone.getLocalPosition());
                 loc.setLocalRotation(bone.getLocalRotation());
@@ -204,7 +204,7 @@ public class SkeletonRenderer implements RenderSystem, UpdateSubscriberSystem {
             skeletalMesh.material.setFloat("light", worldRenderer.getRenderingLightValueAt(worldPos));
             List<Vector3f> bonePositions = Lists.newArrayListWithCapacity(skeletalMesh.mesh.getVertexCount());
             List<Quat4f> boneRotations = Lists.newArrayListWithCapacity(skeletalMesh.mesh.getVertexCount());
-            for (Bone bone : skeletalMesh.mesh.bones()) {
+            for (Bone bone : skeletalMesh.mesh.getBones()) {
                 EntityRef boneEntity = skeletalMesh.boneEntities.get(bone.getName());
                 if (boneEntity == null) {
                     boneEntity = EntityRef.NULL;
