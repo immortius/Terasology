@@ -232,6 +232,10 @@ public class AssetManager {
         return assetURLs.get(0).openStream();
     }
 
+    public <U extends AssetData> Asset<U> generateAsset(AssetUri uri, U data) {
+        return factories.get(uri.getAssetType()).buildAsset(uri, data);
+    }
+
     private class AllAssetIterator implements Iterator<AssetUri> {
         Iterator<AssetSource> sourceIterator;
         Iterator<AssetUri> currentUriIterator;

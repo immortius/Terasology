@@ -32,6 +32,7 @@ import org.terasology.math.Side;
 import org.terasology.math.TeraMath;
 import org.terasology.math.Vector3i;
 import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.opengl.OpenGLMesh;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.shader.ShaderProgram;
 import org.terasology.utilities.collection.EnumBooleanMap;
@@ -612,10 +613,10 @@ public class Block {
 
 
         if (!isDoubleSided() || !glIsEnabled(GL11.GL_CULL_FACE)) {
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
         } else {
             glDisable(GL11.GL_CULL_FACE);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glEnable(GL11.GL_CULL_FACE);
         }
     }

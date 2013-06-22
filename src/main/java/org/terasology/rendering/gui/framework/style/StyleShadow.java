@@ -19,8 +19,10 @@ import org.lwjgl.opengl.GL11;
 import org.terasology.asset.Assets;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.gui.framework.Canvas;
 import org.terasology.rendering.gui.framework.UIDisplayContainer;
 import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
 
@@ -94,7 +96,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
     }
 
     @Override
-    public void render() {
+    public void render(Canvas canvas) {
         if (mesh == null)
             return;
 
@@ -104,7 +106,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
 
         if (shadow != null) {
             ShaderManager.getInstance().enableDefaultTextured();
-            glBindTexture(GL11.GL_TEXTURE_2D, shadow.getId());
+            glBindTexture(GL11.GL_TEXTURE_2D, (OpenGLTexture)shadow.getId());
 
             if (direction == EShadowDirection.INSIDE) {
                 renderInside();

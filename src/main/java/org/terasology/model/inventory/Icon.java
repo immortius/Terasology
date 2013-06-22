@@ -19,6 +19,7 @@ import org.lwjgl.opengl.GL11;
 import org.terasology.asset.Assets;
 import org.terasology.rendering.assets.texture.Texture;
 import org.terasology.rendering.gui.widgets.UIImage;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.world.block.Block;
 import org.terasology.world.block.family.BlockFamily;
 
@@ -343,7 +344,7 @@ public class Icon {
             GL11.glScalef(20f, 20f, 20f);
             GL11.glRotatef(170f, 1f, 0f, 0f);
             GL11.glRotatef(-16f, 0f, 1f, 0f);
-            glBindTexture(GL11.GL_TEXTURE_2D, terrainTex.getId());
+            glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture) terrainTex).getId());
 
             Block block = _blockFamily.getArchetypeBlock();
             block.renderWithLightValue(1.0f);

@@ -24,6 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.rendering.assets.material.Material;
 import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.opengl.OpenGLMaterial;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.rendering.shader.IShaderParameters;
 import org.terasology.rendering.shader.ShaderParametersBlock;
 import org.terasology.rendering.shader.ShaderParametersChunk;
@@ -99,7 +101,7 @@ public class ShaderManager {
         }
 
         if (!material.equals(activateMaterial)) {
-            GL20.glUseProgram(material.getShaderId());
+            GL20.glUseProgram(((OpenGLMaterial)material).getShaderId());
             activateMaterial = material;
             _activeShaderProgram = null;
         }
@@ -111,7 +113,7 @@ public class ShaderManager {
             // TODO: Need to be cubemap aware, only need to clear bind when switching from cubemap to 2D and vice versa,
             // TODO: Don't bind if already bound to the same
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getId());
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture)texture).getId());
             GL13.glActiveTexture(GL13.GL_TEXTURE0);
         }
     }

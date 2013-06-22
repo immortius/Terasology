@@ -31,18 +31,20 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.terasology.asset.AssetType;
+import org.terasology.asset.AssetUri;
+import org.terasology.engine.CoreRegistry;
+import org.terasology.entitySystem.EntityRef;
+import org.terasology.entitySystem.event.ReceiveEvent;
 import org.terasology.entitySystem.lifecycleEvents.BeforeDeactivateComponent;
 import org.terasology.entitySystem.lifecycleEvents.OnActivatedComponent;
 import org.terasology.entitySystem.lifecycleEvents.OnChangedComponent;
+import org.terasology.entitySystem.systems.In;
+import org.terasology.entitySystem.systems.RegisterSystem;
 import org.terasology.entitySystem.systems.RenderSystem;
+import org.terasology.logic.characters.CharacterComponent;
 import org.terasology.logic.inventory.PickupComponent;
 import org.terasology.logic.location.LocationComponent;
-import org.terasology.entitySystem.EntityRef;
-import org.terasology.entitySystem.systems.In;
-import org.terasology.entitySystem.event.ReceiveEvent;
-import org.terasology.entitySystem.systems.RegisterSystem;
-import org.terasology.engine.CoreRegistry;
-import org.terasology.logic.characters.CharacterComponent;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.logic.manager.VertexBufferObjectManager;
 import org.terasology.logic.players.LocalPlayer;
@@ -53,6 +55,8 @@ import org.terasology.network.NetworkSystem;
 import org.terasology.performanceMonitor.PerformanceMonitor;
 import org.terasology.rendering.assets.material.Material;
 import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.opengl.OpenGLMaterial;
+import org.terasology.rendering.opengl.OpenGLMesh;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
 import org.terasology.rendering.shader.ShaderProgram;
@@ -125,7 +129,7 @@ public class MeshRenderer implements RenderSystem {
         Tessellator tessellator = new Tessellator();
         TessellatorHelper.addBlockMesh(tessellator, new Vector4f(1.0f, 1.0f, 1.0f, 1.0f), 0.8f, 0.8f, 0.6f, 0f, 0f, 0f);
         TessellatorHelper.addBlockMesh(tessellator, new Vector4f(1.0f, 1.0f, 1.0f, 0.6f), 1.0f, 1.0f, 0.8f, 0f, 0f, 0f);
-        gelatinousCubeMesh = tessellator.generateMesh();
+        gelatinousCubeMesh = tessellator.generateMesh(new AssetUri(AssetType.MESH, "engine", "gelatinousCube"));
 
         batchVertexBuffer = VertexBufferObjectManager.getInstance().getVboId();
         batchIndexBuffer = VertexBufferObjectManager.getInstance().getVboId();
@@ -219,7 +223,7 @@ public class MeshRenderer implements RenderSystem {
                 shader.setFloat4("colorOffset", meshComp.color.x, meshComp.color.y, meshComp.color.z, meshComp.color.w);
                 shader.setFloat("light", worldRenderer.getRenderingLightValueAt(worldPos));
 
-                gelatinousCubeMesh.render();
+                ((OpenGLMesh) gelatinousCubeMesh).render();
 
                 glPopMatrix();
             }
@@ -242,11 +246,12 @@ public class MeshRenderer implements RenderSystem {
         glTranslated(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
 
         for (Material material : opaqueMesh.keys()) {
-            Mesh lastMesh = null;
-            material.enable();
+            OpenGLMesh lastMesh = null;
+            OpenGLMaterial openGLMat = (OpenGLMaterial) material;
+            openGLMat.enable();
             material.setInt("carryingTorch", carryingTorch ? 1 : 0);
             material.setFloat("light", 1);
-            material.bindTextures();
+            openGLMat.bindTextures();
             lastRendered = opaqueMesh.get(material).size();
 
             // Batching
@@ -282,8 +287,8 @@ public class MeshRenderer implements RenderSystem {
                             if (lastMesh != null) {
                                 lastMesh.postRender();
                             }
-                            lastMesh = meshComp.mesh;
-                            meshComp.mesh.preRender();
+                            lastMesh = (OpenGLMesh) meshComp.mesh;
+                            lastMesh.preRender();
                         }
                         glPushMatrix();
                         trans.getOpenGLMatrix(openglMat);
@@ -293,7 +298,7 @@ public class MeshRenderer implements RenderSystem {
 
                         material.setFloat("light", worldRenderer.getRenderingLightValueAt(worldPos));
 
-                        meshComp.mesh.doRender();
+                        lastMesh.doRender();
 
                         glPopMatrix();
                     }
@@ -301,7 +306,9 @@ public class MeshRenderer implements RenderSystem {
                     // Batching
                     MeshComponent meshComp = entity.getComponent(MeshComponent.class);
                     LocationComponent location = entity.getComponent(LocationComponent.class);
-                    if (location == null) continue;
+                    if (location == null) {
+                        continue;
+                    }
 
                     location.getWorldRotation(worldRot);
                     location.getWorldPosition(worldPos);
@@ -313,7 +320,7 @@ public class MeshRenderer implements RenderSystem {
                     AABB aabb = meshComp.mesh.getAABB().transform(trans);
 
                     if (worldRenderer.isAABBVisible(aabb)) {
-                        indexOffset = meshComp.mesh.addToBatch(trans, normTrans, vertexData, indexData, indexOffset);
+                        indexOffset = ((OpenGLMesh) meshComp.mesh).addToBatch(trans, normTrans, vertexData, indexData, indexOffset);
                     }
 
                     if (indexOffset > 100) {

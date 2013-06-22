@@ -59,7 +59,7 @@ public abstract class UIDisplayContainer extends UIDisplayElement {
         super();
     }
 
-    public void render() {
+    public void render(Canvas canvas) {
         boolean allowsCrop = false;
         int cropX = 0;
         int cropY = 0;

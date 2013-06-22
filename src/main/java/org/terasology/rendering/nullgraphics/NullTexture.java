@@ -10,6 +10,9 @@ import org.terasology.rendering.assets.texture.TextureData;
  */
 public class NullTexture extends AbstractAsset<TextureData> implements Texture {
 
+    // TODO: Remove later;
+    private TextureData data;
+
     private FilterMode filterMode;
     private WrapMode wrapMode;
     private int height;
@@ -41,7 +44,13 @@ public class NullTexture extends AbstractAsset<TextureData> implements Texture {
     }
 
     @Override
+    public TextureData getData() {
+        return data;
+    }
+
+    @Override
     public void reload(TextureData data) {
+        this.data = data;
         this.filterMode = data.getFilterMode();
         this.wrapMode = data.getWrapMode();
         this.height = data.getHeight();

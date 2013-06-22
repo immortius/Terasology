@@ -49,7 +49,7 @@ public class BlockGrid {
     }
 
     /* CONST */
-    private final Mesh _mesh;
+    private final Mesh mesh;
 
     private final Set<GridPosition> _gridPositions = new HashSet<GridPosition>();
     private Vector3i _minBounds = new Vector3i(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
@@ -58,7 +58,7 @@ public class BlockGrid {
     public BlockGrid() {
         Tessellator tessellator = new Tessellator();
         TessellatorHelper.addBlockMesh(tessellator, new Vector4f(0.0f, 0.0f, 1.0f, 0.25f), 1.005f, 1.0f, 0.5f, 0.0f, 0.0f, 0.0f);
-        _mesh = tessellator.generateMesh();
+        mesh = tessellator.generateMesh();
     }
 
     public void render() {
@@ -77,7 +77,7 @@ public class BlockGrid {
                 Vector3f cameraPosition = CoreRegistry.get(WorldRenderer.class).getActiveCamera().getPosition();
                 GL11.glTranslated(gp.position.x - cameraPosition.x, gp.position.y - cameraPosition.y, gp.position.z - cameraPosition.z);
 
-                _mesh.render();
+                mesh.render();
 
                 GL11.glPopMatrix();
             }

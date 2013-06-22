@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.gui.framework.Canvas;
 import org.terasology.rendering.gui.framework.UIDisplayContainer;
 import org.terasology.rendering.assets.mesh.Mesh;
 import org.terasology.rendering.primitives.Tessellator;
@@ -81,7 +82,7 @@ public class UIImage extends UIDisplayContainer {
     }
 
     @Override
-    public void render() {
+    public void render(Canvas canvas) {
         if (mesh == null)
             return;
 
@@ -120,7 +121,7 @@ public class UIImage extends UIDisplayContainer {
             glPopMatrix();
         }
 
-        super.render();
+        super.render(canvas);
     }
 
     /**

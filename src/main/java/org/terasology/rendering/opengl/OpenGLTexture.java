@@ -42,6 +42,9 @@ public class OpenGLTexture extends AbstractAsset<TextureData> implements Texture
     private WrapMode wrapMode = WrapMode.Clamp;
     private FilterMode filterMode = FilterMode.Nearest;
 
+    // TODO: Remove this when Icons can access TextureData directly.
+    private TextureData textureData;
+
     public OpenGLTexture(AssetUri uri, TextureData data) {
         super(uri);
 
@@ -55,6 +58,7 @@ public class OpenGLTexture extends AbstractAsset<TextureData> implements Texture
         this.height = data.getHeight();
         this.wrapMode = data.getWrapMode();
         this.filterMode = data.getFilterMode();
+        this.textureData = data;
 
         id = glGenTextures();
         logger.debug("Bound texture '{}' - {}", getURI(), id);
@@ -103,5 +107,10 @@ public class OpenGLTexture extends AbstractAsset<TextureData> implements Texture
 
     public FilterMode getFilterMode() {
         return filterMode;
+    }
+
+    @Override
+    public TextureData getData() {
+        return textureData;
     }
 }

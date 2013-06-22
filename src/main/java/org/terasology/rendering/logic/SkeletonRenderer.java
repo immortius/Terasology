@@ -24,20 +24,22 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.terasology.engine.CoreRegistry;
+import org.terasology.entitySystem.EntityManager;
+import org.terasology.entitySystem.EntityRef;
+import org.terasology.entitySystem.event.ReceiveEvent;
 import org.terasology.entitySystem.lifecycleEvents.OnActivatedComponent;
+import org.terasology.entitySystem.systems.RegisterSystem;
 import org.terasology.entitySystem.systems.RenderSystem;
 import org.terasology.entitySystem.systems.UpdateSubscriberSystem;
 import org.terasology.logic.location.Location;
 import org.terasology.logic.location.LocationComponent;
-import org.terasology.entitySystem.EntityManager;
-import org.terasology.entitySystem.EntityRef;
-import org.terasology.entitySystem.event.ReceiveEvent;
-import org.terasology.entitySystem.systems.RegisterSystem;
-import org.terasology.engine.CoreRegistry;
 import org.terasology.logic.players.LocalPlayer;
 import org.terasology.rendering.assets.animation.MeshAnimation;
 import org.terasology.rendering.assets.animation.MeshAnimationFrame;
 import org.terasology.rendering.assets.skeletalmesh.Bone;
+import org.terasology.rendering.opengl.OpenGLMaterial;
+import org.terasology.rendering.opengl.OpenGLSkeletalMesh;
 import org.terasology.rendering.world.WorldRenderer;
 
 import javax.vecmath.Matrix4f;
@@ -179,10 +181,11 @@ public class SkeletonRenderer implements RenderSystem, UpdateSubscriberSystem {
             if (skeletalMesh.mesh == null || skeletalMesh.material == null) {
                 continue;
             }
-            skeletalMesh.material.enable();
+            OpenGLMaterial mat = (OpenGLMaterial) skeletalMesh.material;
+            mat.enable();
             skeletalMesh.material.setInt("carryingTorch", carryingTorch ? 1 : 0);
             skeletalMesh.material.setFloat("light", 1);
-            skeletalMesh.material.bindTextures();
+            mat.bindTextures();
 
             float[] openglMat = new float[16];
             FloatBuffer mBuffer = BufferUtils.createFloatBuffer(16);
@@ -224,7 +227,7 @@ public class SkeletonRenderer implements RenderSystem, UpdateSubscriberSystem {
                     boneRotations.add(new Quat4f());
                 }
             }
-            skeletalMesh.mesh.render(bonePositions, boneRotations);
+            ((OpenGLSkeletalMesh) skeletalMesh.mesh).render(bonePositions, boneRotations);
             glPopMatrix();
         }
 

@@ -22,9 +22,8 @@ import org.lwjgl.opengl.GL11;
 import org.newdawn.slick.Color;
 import org.terasology.input.events.KeyEvent;
 import org.terasology.rendering.assets.font.Font;
-import org.terasology.rendering.gui.framework.UIDisplayContainer;
-import org.terasology.rendering.gui.framework.UIDisplayContainerScrollable;
-import org.terasology.rendering.gui.framework.UIDisplayElement;
+import org.terasology.rendering.gui.framework.*;
+import org.terasology.rendering.gui.framework.Canvas;
 import org.terasology.rendering.gui.framework.events.ChangedListener;
 import org.terasology.rendering.gui.framework.events.FocusListener;
 import org.terasology.rendering.gui.framework.events.KeyListener;
@@ -278,7 +277,7 @@ public class UIText extends UIDisplayContainerScrollable {
             setSize(size);
         }
 
-        public void render() {
+        public void render(Canvas canvas) {
             if (!isVisible()) {
                 return;
             }
@@ -312,7 +311,7 @@ public class UIText extends UIDisplayContainerScrollable {
         private final List<Vector2f[]> rectangles = new ArrayList<Vector2f[]>();
         private boolean fade = false;
 
-        public void render() {
+        public void render(Canvas canvas) {
             if (!isVisible() || rectangles.size() == 0) {
                 return;
             }

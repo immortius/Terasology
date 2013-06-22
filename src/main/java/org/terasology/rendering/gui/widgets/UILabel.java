@@ -23,6 +23,7 @@ import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.TeraMath;
 import org.terasology.performanceMonitor.PerformanceMonitor;
 import org.terasology.rendering.assets.font.Font;
+import org.terasology.rendering.gui.framework.Canvas;
 import org.terasology.rendering.gui.framework.UIDisplayContainer;
 import org.terasology.rendering.gui.framework.events.ChangedListener;
 
@@ -72,8 +73,8 @@ public class UILabel extends UIDisplayContainer {
         setText(text);
     }
 
-    public void render() {
-        super.render();
+    public void render(Canvas canvas) {
+        super.render(canvas);
 
         PerformanceMonitor.startActivity("Render UIText");
 

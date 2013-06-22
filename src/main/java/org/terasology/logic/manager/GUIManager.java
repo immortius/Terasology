@@ -20,6 +20,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.terasology.rendering.gui.framework.OpenGLCanvas;
 import org.terasology.rendering.gui.windows.UIScreenConsole;
 import org.terasology.world.WorldComponent;
 import org.terasology.entitySystem.systems.ComponentSystem;
@@ -105,7 +106,7 @@ public class GUIManager implements ComponentSystem {
      * Render all visible display elements an their child's.
      */
     public void render() {
-        renderer.render();
+        renderer.render(new OpenGLCanvas());
     }
 
     /**

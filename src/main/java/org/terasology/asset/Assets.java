@@ -20,6 +20,7 @@ import org.terasology.audio.StaticSound;
 import org.terasology.audio.StreamingSound;
 import org.terasology.rendering.assets.font.Font;
 import org.terasology.rendering.assets.material.Material;
+import org.terasology.rendering.assets.mesh.MeshData;
 import org.terasology.rendering.assets.shader.Shader;
 import org.terasology.rendering.assets.texture.Texture;
 import org.terasology.rendering.assets.animation.MeshAnimation;
@@ -232,5 +233,13 @@ public final class Assets {
 
     // Private constructor to prevent instantiation (static class)
     private Assets() {
+    }
+
+    public static <T extends Asset<U>, U extends AssetData> T generateAsset(AssetUri uri, U data, Class<T> assetClass) {
+        Asset<U> asset = AssetManager.getInstance().generateAsset(uri, data);
+        if (assetClass.isInstance(asset)) {
+            return assetClass.cast(asset);
+        }
+        return null;
     }
 }

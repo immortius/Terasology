@@ -50,11 +50,11 @@ public class UIDisplayRenderer extends UIDisplayContainer {
 
     @Override
     public void renderTransformed() {
-        render();
+        render(canvas);
     }
 
     @Override
-    public void render() {
+    public void render(Canvas canvas) {
         if (isVisible()) {
             glMatrixMode(GL_PROJECTION);
             glPushMatrix();
@@ -69,7 +69,7 @@ public class UIDisplayRenderer extends UIDisplayContainer {
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            super.render();
+            super.render(canvas);
 
             glDisable(GL_BLEND);
             glEnable(GL_DEPTH_TEST);

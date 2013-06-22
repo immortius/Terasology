@@ -147,13 +147,13 @@ public abstract class UIDisplayElement {
             if (positionType == EPositionType.RELATIVE) {
                 glPushMatrix();
                 glTranslatef(getPosition().x, getPosition().y, 0);
-                render();
+                render(canvas);
                 glPopMatrix();
             } else if (positionType == EPositionType.ABSOLUTE) {
                 glPushMatrix();
                 glLoadIdentity();
                 glTranslatef(getPosition().x, getPosition().y, 0);
-                render();
+                render(canvas);
                 glPopMatrix();
             }
 
@@ -342,8 +342,9 @@ public abstract class UIDisplayElement {
 
     /**
      * Render the display element. Will be executed every tick.
+     * @param canvas
      */
-    public abstract void render();
+    public abstract void render(Canvas canvas);
 
     /**
      * Update the display element. For tasks which needs continuously updates. Will be executed every tick and needs to be avoided.

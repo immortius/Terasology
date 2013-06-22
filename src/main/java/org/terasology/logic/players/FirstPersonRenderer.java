@@ -17,6 +17,8 @@ package org.terasology.logic.players;
 
 import com.google.common.collect.Maps;
 import org.lwjgl.opengl.GL11;
+import org.terasology.asset.AssetType;
+import org.terasology.asset.AssetUri;
 import org.terasology.asset.Assets;
 import org.terasology.entitySystem.systems.RenderSystem;
 import org.terasology.entitySystem.EntityRef;
@@ -34,6 +36,8 @@ import org.terasology.model.inventory.Icon;
 import org.terasology.rendering.assets.texture.Texture;
 import org.terasology.rendering.gui.widgets.UIInventoryGrid;
 import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.opengl.OpenGLMesh;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.rendering.primitives.MeshFactory;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
@@ -91,7 +95,7 @@ public class FirstPersonRenderer implements RenderSystem {
 
         Tessellator tessellator = new Tessellator();
         TessellatorHelper.addBlockMesh(tessellator, new Vector4f(1, 1, 1, 1), texPos, texWidth, 1.0f, 1.0f, 0.9f, 0.0f, 0.0f, 0.0f);
-        handMesh = tessellator.generateMesh();
+        handMesh = tessellator.generateMesh(new AssetUri(AssetType.MESH, "engine", "hand"));
         handTex = Assets.getTexture("engine:char");
     }
 
@@ -146,7 +150,7 @@ public class FirstPersonRenderer implements RenderSystem {
         ShaderProgram shader = ShaderManager.getInstance().getShaderProgram("block");
         shader.enable();
         shader.setFloat("light", worldRenderer.getRenderingLightValue());
-        glBindTexture(GL11.GL_TEXTURE_2D, handTex.getId());
+        glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture)handTex).getId());
 
         glPushMatrix();
         glTranslatef(0.8f, -0.8f + bobOffset - handMovementAnimationOffset * 0.5f, -1.0f - handMovementAnimationOffset * 0.5f);
@@ -155,7 +159,7 @@ public class FirstPersonRenderer implements RenderSystem {
         glTranslatef(0f, 0.25f, 0f);
         glScalef(0.3f, 0.6f, 0.3f);
 
-        handMesh.render();
+        ((OpenGLMesh)handMesh).render();
 
         glPopMatrix();
     }
@@ -178,11 +182,11 @@ public class FirstPersonRenderer implements RenderSystem {
         Mesh itemMesh = iconMeshes.get(iconName);
         if (itemMesh == null) {
             Icon icon = Icon.get(iconName);
-            itemMesh = MeshFactory.getInstance().generateItemMesh(icon.getX(), icon.getY());
+            itemMesh = MeshFactory.generateItemMesh(new AssetUri(AssetType.MESH, "engine", "icon." + iconName), icon.getX(), icon.getY());
             iconMeshes.put(iconName, itemMesh);
         }
 
-        itemMesh.render();
+        ((OpenGLMesh)itemMesh).render();
 
         glPopMatrix();
     }

@@ -23,6 +23,7 @@ import org.terasology.logic.inventory.InventoryManager;
 import org.terasology.logic.inventory.ItemComponent;
 import org.terasology.model.inventory.Icon;
 import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.gui.framework.Canvas;
 import org.terasology.rendering.gui.framework.UIDisplayContainer;
 import org.terasology.world.block.Block;
 import org.terasology.world.block.items.BlockItemComponent;
@@ -105,7 +106,7 @@ public class UIItemIcon extends UIDisplayContainer {
     }
 
     @Override
-    public void render() {
+    public void render(Canvas canvas) {
 
         ItemComponent itemComponent = item.getComponent(ItemComponent.class);
         if (itemComponent == null) {
@@ -125,7 +126,7 @@ public class UIItemIcon extends UIDisplayContainer {
             }
         }
 
-        super.render();
+        super.render(canvas);
     }
 
     private void renderIcon(Icon icon) {

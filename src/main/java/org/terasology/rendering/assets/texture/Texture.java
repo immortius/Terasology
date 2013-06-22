@@ -74,4 +74,7 @@ public interface Texture extends Asset<TextureData> {
     WrapMode getWrapMode();
 
     FilterMode getFilterMode();
+
+    // TODO: Remove when no longer needed
+    TextureData getData();
 }
