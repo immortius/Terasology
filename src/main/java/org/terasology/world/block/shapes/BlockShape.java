@@ -15,17 +15,30 @@
  */
 package org.terasology.world.block.shapes;
 
+import com.bulletphysics.collision.shapes.BoxShape;
 import com.bulletphysics.collision.shapes.CollisionShape;
+import com.bulletphysics.collision.shapes.CompoundShape;
+import com.bulletphysics.collision.shapes.CompoundShapeChild;
+import com.bulletphysics.collision.shapes.ConvexHullShape;
+import com.bulletphysics.linearmath.QuaternionUtil;
+import com.bulletphysics.linearmath.Transform;
+import com.bulletphysics.util.ObjectArrayList;
 import com.google.common.collect.Maps;
 import org.terasology.asset.Asset;
 import org.terasology.asset.AssetUri;
+import org.terasology.math.Pitch;
+import org.terasology.math.Roll;
 import org.terasology.math.Rotation;
 import org.terasology.math.Side;
+import org.terasology.math.Yaw;
 import org.terasology.utilities.collection.EnumBooleanMap;
 import org.terasology.world.block.BlockPart;
 
+import javax.vecmath.Matrix4f;
+import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 import java.util.EnumMap;
+import java.util.Map;
 
 /**
  * Describes a shape that a block can take. The shape may also be rotated if not symmetrical.
@@ -36,15 +49,13 @@ public class BlockShape implements Asset {
     private AssetUri uri;
     private EnumMap<BlockPart, BlockMeshPart> meshParts = Maps.newEnumMap(BlockPart.class);
     private EnumBooleanMap<Side> fullSide = new EnumBooleanMap<Side>(Side.class);
-    private EnumMap<Rotation, CollisionShape> collisionShape = Maps.newEnumMap(Rotation.class);
-    private EnumMap<Rotation, Vector3f> collisionOffset = Maps.newEnumMap(Rotation.class);
+    private CollisionShape baseCollisionShape;
+    private Vector3f baseCollisionOffset = new Vector3f();
+    private Map<Rotation, CollisionShape> collisionShape = Maps.newHashMap();
     private boolean collisionSymmetric = false;
-
-    public BlockShape() {
-        for (Rotation rot : Rotation.horizontalRotations()) {
-            collisionOffset.put(rot, new Vector3f());
-        }
-    }
+    private boolean yawSymmetric = false;
+    private boolean pitchSymmetric = false;
+    private boolean rollSymmetric = false;
 
     public BlockMeshPart getMeshPart(BlockPart part) {
         return meshParts.get(part);
@@ -68,25 +79,36 @@ public class BlockShape implements Asset {
     }
 
     public CollisionShape getCollisionShape() {
-        return collisionShape.get(Rotation.NONE);
+        return baseCollisionShape;
     }
 
     public Vector3f getCollisionOffset() {
-        return collisionOffset.get(Rotation.NONE);
+        return baseCollisionOffset;
     }
 
     public CollisionShape getCollisionShape(Rotation rot) {
         if (isCollisionSymmetric()) {
-            return collisionShape.get(Rotation.NONE);
+            return baseCollisionShape;
         }
-        return collisionShape.get(rot);
+        rot = applySymmetry(rot);
+        CollisionShape result = collisionShape.get(rot);
+        if (result == null) {
+            result = rotate(baseCollisionShape, rot.getQuat4f());
+            collisionShape.put(rot, result);
+        }
+        return result;
     }
 
     public Vector3f getCollisionOffset(Rotation rot) {
         if (isCollisionSymmetric()) {
-            return collisionOffset.get(Rotation.NONE);
+            return new Vector3f(baseCollisionOffset);
         }
-        return collisionOffset.get(rot);
+        rot = applySymmetry(rot);
+        return QuaternionUtil.quatRotate(rot.getQuat4f(), baseCollisionOffset, new Vector3f());
+    }
+
+    private Rotation applySymmetry(Rotation rot) {
+        return Rotation.rotate(yawSymmetric ? Yaw.NONE : rot.getYaw(), pitchSymmetric ? Pitch.NONE : rot.getPitch(), rollSymmetric ? Roll.NONE : rot.getRoll());
     }
 
     public void setMeshPart(BlockPart part, BlockMeshPart mesh) {
@@ -98,19 +120,13 @@ public class BlockShape implements Asset {
     }
 
     public void setCollisionOffset(Vector3f offset) {
-        collisionOffset.get(Rotation.NONE).set(offset);
+        baseCollisionOffset.set(offset);
     }
 
     public void setCollisionShape(CollisionShape shape) {
-        collisionShape.put(Rotation.NONE, shape);
-    }
-
-    public void setCollisionOffset(Rotation rot, Vector3f offset) {
-        collisionOffset.get(rot).set(offset);
-    }
-
-    public void setCollisionShape(Rotation rot, CollisionShape shape) {
-        collisionShape.put(rot, shape);
+        baseCollisionShape = shape;
+        collisionShape.clear();
+        collisionShape.put(Rotation.none(), shape);
     }
 
     public boolean isCollisionSymmetric() {
@@ -119,6 +135,62 @@ public class BlockShape implements Asset {
 
     public void setCollisionSymmetric(boolean collisionSymmetric) {
         this.collisionSymmetric = collisionSymmetric;
+        if (collisionSymmetric) {
+            yawSymmetric = true;
+            pitchSymmetric = true;
+            rollSymmetric = true;
+        }
+    }
+
+    public boolean isYawSymmetric() {
+        return yawSymmetric;
+    }
+
+    public boolean isRollSymmetric() {
+        return rollSymmetric;
+    }
+
+    public boolean isPitchSymmetric() {
+        return pitchSymmetric;
+    }
+
+    public void setYawSymmetric(boolean yawSymmetric) {
+        this.yawSymmetric = yawSymmetric;
+    }
+
+    public void setPitchSymmetric(boolean pitchSymmetric) {
+        this.pitchSymmetric = pitchSymmetric;
+    }
+
+    public void setRollSymmetric(boolean rollSymmetric) {
+        this.rollSymmetric = rollSymmetric;
+    }
+
+    private CollisionShape rotate(CollisionShape shape, Quat4f rot) {
+        if (shape instanceof BoxShape) {
+            BoxShape box = (BoxShape) shape;
+            Vector3f extents = box.getHalfExtentsWithoutMargin(new Vector3f());
+            QuaternionUtil.quatRotate(rot, extents, extents);
+            extents.absolute();
+            return new BoxShape(extents);
+        } else if (shape instanceof CompoundShape) {
+            CompoundShape compound = (CompoundShape) shape;
+            CompoundShape newShape = new CompoundShape();
+            for (CompoundShapeChild child : compound.getChildList()) {
+                CollisionShape rotatedChild = rotate(child.childShape, rot);
+                Vector3f offset = QuaternionUtil.quatRotate(rot, child.transform.origin, new Vector3f());
+                newShape.addChildShape(new Transform(new Matrix4f(Rotation.none().getQuat4f(), offset, 1.0f)), rotatedChild);
+            }
+            return newShape;
+        } else if (shape instanceof ConvexHullShape) {
+            ConvexHullShape convexHull = (ConvexHullShape) shape;
+            ObjectArrayList<Vector3f> transformedVerts = new ObjectArrayList<>();
+            for (Vector3f vert : convexHull.getPoints()) {
+                transformedVerts.add(QuaternionUtil.quatRotate(rot, vert, new Vector3f()));
+            }
+            return new ConvexHullShape(transformedVerts);
+        }
+        return shape;
     }
 
 
