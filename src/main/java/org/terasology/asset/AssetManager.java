@@ -20,7 +20,7 @@ import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.entitySystem.common.NullIterator;
-import org.terasology.logic.mod.ModManager;
+import org.terasology.entitySystem.prefab.Prefab;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,11 +75,11 @@ public class AssetManager {
     }
 
     public void addAssetTemporary(AssetUri uri, Asset asset) {
-        Asset old = assetCache.put(uri, asset);
-        if (old != null) {
-            // TODO - most of our assets cause crashes when disposed at the moment
+        assetCache.put(uri, asset);
+        // TODO - most of our assets cause crashes when disposed at the moment
+        /* if (old != null) {
             // old.dispose();
-        }
+        } */
     }
 
     public Asset tryLoadAsset(AssetUri uri) {
@@ -159,13 +159,22 @@ public class AssetManager {
         Iterator<Asset> iterator = assetCache.values().iterator();
         while (iterator.hasNext()) {
             Asset asset = iterator.next();
-            // Don't dispose engine assets, all sorts of systems have references to them
-            if (!asset.getURI().getPackage().equals(ModManager.ENGINE_PACKAGE)) {
-                // TODO: Fix disposal
-                //asset.dispose();
-                //iterator.remove();
+            if (asset instanceof Prefab) {
+                asset.dispose();
+                iterator.remove();
             }
         }
+        // TODO: Fix disposal
+//        Iterator<Asset> iterator = assetCache.values().iterator();
+//        while (iterator.hasNext()) {
+//            Asset asset = iterator.next();
+//
+//            // Don't dispose engine assets, all sorts of systems have references to them
+//            if (!asset.getURI().getPackage().equals(ModManager.ENGINE_PACKAGE)) {
+//                asset.dispose();
+//                iterator.remove();
+//            }
+//        }
     }
 
     public void addAssetSource(AssetSource source) {
@@ -214,7 +223,7 @@ public class AssetManager {
         if (overrideSource != null) {
             return overrideSource.getOverride(uri);
         } else {
-            AssetSource source = assetSources.get(uri.getPackage());
+            AssetSource source = assetSources.get(uri.getNormalisedPackage());
             if (source != null) {
                 return source.get(uri);
             }

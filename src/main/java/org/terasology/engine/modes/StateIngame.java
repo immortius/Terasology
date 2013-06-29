@@ -17,7 +17,9 @@ package org.terasology.engine.modes;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.systems.UpdateSubscriberSystem;
+import org.terasology.logic.console.Console;
 import org.terasology.logic.players.MenuControlSystem;
 import org.terasology.entitySystem.EngineEntityManager;
 import org.terasology.entitySystem.EntityManager;
@@ -34,7 +36,9 @@ import org.terasology.engine.paths.PathManager;
 import org.terasology.network.NetworkMode;
 import org.terasology.network.NetworkSystem;
 import org.terasology.performanceMonitor.PerformanceMonitor;
+import org.terasology.physics.BulletPhysics;
 import org.terasology.rendering.world.WorldRenderer;
+import org.terasology.world.block.management.BlockManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -92,9 +96,10 @@ public class StateIngame implements GameState {
         eventSystem.process();
         componentSystemManager.shutdown();
         guiManager.closeAllWindows();
+        CoreRegistry.get(BulletPhysics.class).dispose();
         if (saveWorld) {
             try {
-                CoreRegistry.get(WorldPersister.class).save(new File(PathManager.getInstance().getCurrentWorldPath(), TerasologyConstants.ENTITY_DATA_FILE), WorldPersister.SaveFormat.Binary);
+                CoreRegistry.get(WorldPersister.class).save(new File(PathManager.getInstance().getCurrentSavePath(), TerasologyConstants.ENTITY_DATA_FILE), WorldPersister.SaveFormat.Binary);
             } catch (IOException e) {
                 logger.error("Failed to save entities", e);
             }
@@ -104,6 +109,10 @@ public class StateIngame implements GameState {
             worldRenderer.dispose(saveWorld);
             worldRenderer = null;
         }
+        CoreRegistry.get(Console.class).dispose();
+        CoreRegistry.clear();
+        BlockManager.getAir().setEntity(EntityRef.NULL);
+
     }
 
     @Override

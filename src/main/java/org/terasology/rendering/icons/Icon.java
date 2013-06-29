@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.model.inventory;
+package org.terasology.rendering.icons;
 
 import org.lwjgl.opengl.GL11;
 import org.terasology.asset.Assets;
@@ -63,7 +63,7 @@ public class Icon {
         _blockFamily = null;
 
         _element.setSize(new Vector2f(32, 32));
-        _element.getTextureSize().set(new Vector2f(0.0624f, 0.0624f));
+        _element.setTextureSize(new Vector2f(16, 16));
         _element.setVisible(true);
         _element.setPosition(new Vector2f(-10f, -16f));
 
@@ -377,7 +377,7 @@ public class Icon {
             return;
         }
 
-        _element.getTextureOrigin().set(new Vector2f(x * 0.0625f, y * 0.0625f));
+        _element.setTextureOrigin(new Vector2f(x * 16f, y * 16f));
     }
 }
 

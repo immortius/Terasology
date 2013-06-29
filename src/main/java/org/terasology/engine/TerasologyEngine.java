@@ -33,8 +33,10 @@ import org.terasology.audio.AudioManager;
 import org.terasology.audio.NullAudioManager;
 import org.terasology.audio.openAL.OpenALManager;
 import org.terasology.config.Config;
+import org.terasology.engine.internal.TimeLwjgl;
 import org.terasology.engine.modes.GameState;
 import org.terasology.engine.paths.PathManager;
+import org.terasology.game.Game;
 import org.terasology.identity.CertificateGenerator;
 import org.terasology.identity.CertificatePair;
 import org.terasology.logic.manager.GUIManager;
@@ -59,6 +61,7 @@ import org.terasology.version.TerasologyVersion;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -88,7 +91,7 @@ public class TerasologyEngine implements GameEngine {
     private AudioManager audioManager;
     private Config config;
 
-    private Timer timer;
+    private EngineTime time;
     private final ThreadPoolExecutor threadPool = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
     public TerasologyEngine() {
@@ -116,6 +119,7 @@ public class TerasologyEngine implements GameEngine {
         initTimer(); // Dependent on LWJGL
         initManagers();
         updateInputConfig();
+        CoreRegistry.putPermanently(GUIManager.class, new GUIManager());
         initSecurity();
         initialised = true;
     }
@@ -149,7 +153,7 @@ public class TerasologyEngine implements GameEngine {
             config.getSecurity().setServerCredentials(serverIdentity.getPublicCert(), serverIdentity.getPrivateCert());
             config.save();
         }
-        CoreRegistry.put(Config.class, config);
+        CoreRegistry.putPermanently(Config.class, config);
     }
 
     private void updateInputConfig() {
@@ -187,7 +191,7 @@ public class TerasologyEngine implements GameEngine {
         changeState(initialState);
         running = true;
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-        CoreRegistry.put(GameEngine.class, this);
+        CoreRegistry.putPermanently(GameEngine.class, this);
 
         mainLoop();
 
@@ -288,7 +292,7 @@ public class TerasologyEngine implements GameEngine {
         } else {
             audioManager = new OpenALManager(config.getAudio());
         }
-        CoreRegistry.put(AudioManager.class, audioManager);
+        CoreRegistry.putPermanently(AudioManager.class, audioManager);
         AssetManager.getInstance().setAssetFactory(AssetType.SOUND, audioManager.getStaticSoundFactory());
         AssetManager.getInstance().setAssetFactory(AssetType.MUSIC, audioManager.getStreamingSoundFactory());
     }
@@ -366,10 +370,11 @@ public class TerasologyEngine implements GameEngine {
     }
 
     private void initManagers() {
-        CoreRegistry.put(CollisionGroupManager.class, new CollisionGroupManager());
-        CoreRegistry.put(ModManager.class, new ModManager());
-        CoreRegistry.put(ComponentSystemManager.class, new ComponentSystemManager());
-        CoreRegistry.put(NetworkSystem.class, new NetworkSystemImpl(timer));
+        CoreRegistry.putPermanently(CollisionGroupManager.class, new CollisionGroupManager());
+        CoreRegistry.putPermanently(ModManager.class, new ModManager());
+        CoreRegistry.putPermanently(ComponentSystemManager.class, new ComponentSystemManager());
+        CoreRegistry.putPermanently(NetworkSystem.class, new NetworkSystemImpl(time));
+        CoreRegistry.putPermanently(Game.class, new Game(time));
 
         AssetType.registerAssetTypes();
         AssetManager.getInstance().addAssetSource(new ClasspathSource(ModManager.ENGINE_PACKAGE, getClass().getProtectionDomain().getCodeSource(), ModManager.ASSETS_SUBDIRECTORY, ModManager.OVERRIDES_SUBDIRECTORY));
@@ -379,8 +384,8 @@ public class TerasologyEngine implements GameEngine {
     }
 
     private void initTimer() {
-        timer = new TimerLwjgl();
-        CoreRegistry.put(Timer.class, timer);
+        time = new TimeLwjgl();
+        CoreRegistry.putPermanently(Time.class, time);
     }
 
     private void cleanup() {
@@ -428,15 +433,20 @@ public class TerasologyEngine implements GameEngine {
                 break;
             }
 
-            timer.tick();
+            Iterator<Float> updateCycles = time.tick();
 
             PerformanceMonitor.startActivity("Network Update");
             networkSystem.update();
             PerformanceMonitor.endActivity();
 
-            PerformanceMonitor.startActivity("Main Update");
-            currentState.update(timer.getDelta());
-            PerformanceMonitor.endActivity();
+            long totalDelta = 0;
+            while (updateCycles.hasNext()) {
+                float delta = updateCycles.next();
+                totalDelta += time.getDeltaInMs();
+                PerformanceMonitor.startActivity("Main Update");
+                currentState.update(delta);
+                PerformanceMonitor.endActivity();
+            }
 
             PerformanceMonitor.startActivity("Render");
             currentState.render();
@@ -445,11 +455,11 @@ public class TerasologyEngine implements GameEngine {
             PerformanceMonitor.endActivity();
 
             PerformanceMonitor.startActivity("Audio");
-            audioManager.update(timer.getDelta());
+            audioManager.update(totalDelta / 1000f);
             PerformanceMonitor.endActivity();
 
             PerformanceMonitor.startActivity("Input");
-            currentState.handleInput(timer.getDelta());
+            currentState.handleInput(totalDelta / 1000f);
             PerformanceMonitor.endActivity();
 
             PerformanceMonitor.rollCycle();

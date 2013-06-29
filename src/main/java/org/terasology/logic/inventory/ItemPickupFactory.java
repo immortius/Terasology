@@ -28,7 +28,7 @@ import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.prefab.Prefab;
 import org.terasology.entitySystem.prefab.PrefabManager;
 import org.terasology.engine.CoreRegistry;
-import org.terasology.model.inventory.Icon;
+import org.terasology.rendering.icons.Icon;
 import org.terasology.physics.RigidBodyComponent;
 import org.terasology.rendering.assets.mesh.Mesh;
 import org.terasology.rendering.logic.MeshComponent;

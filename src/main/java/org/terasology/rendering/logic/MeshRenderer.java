@@ -36,6 +36,7 @@ import org.terasology.asset.AssetUri;
 import org.terasology.engine.CoreRegistry;
 import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.event.ReceiveEvent;
+import org.terasology.entitySystem.RegisterMode;
 import org.terasology.entitySystem.lifecycleEvents.BeforeDeactivateComponent;
 import org.terasology.entitySystem.lifecycleEvents.OnActivatedComponent;
 import org.terasology.entitySystem.lifecycleEvents.OnChangedComponent;
@@ -95,7 +96,7 @@ import static org.lwjgl.opengl.GL11.glVertexPointer;
  *
  * @author Immortius <immortius@gmail.com>
  */
-@RegisterSystem(whenHeadless = false)
+@RegisterSystem(RegisterMode.CLIENT)
 public class MeshRenderer implements RenderSystem {
     private static final Logger logger = LoggerFactory.getLogger(MeshRenderer.class);
 

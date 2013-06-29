@@ -32,9 +32,9 @@ import org.terasology.audio.NullAudioManager;
 import org.terasology.config.Config;
 import org.terasology.engine.ComponentSystemManager;
 import org.terasology.engine.CoreRegistry;
+import org.terasology.engine.EngineTime;
 import org.terasology.engine.Terasology;
-import org.terasology.engine.Timer;
-import org.terasology.engine.TimerLwjgl;
+import org.terasology.engine.Time;
 import org.terasology.engine.bootstrap.EntitySystemBuilder;
 import org.terasology.engine.modes.loadProcesses.LoadPrefabs;
 import org.terasology.engine.paths.PathManager;
@@ -44,6 +44,8 @@ import org.terasology.network.NetworkSystem;
 import org.terasology.network.internal.NetworkSystemImpl;
 import org.terasology.physics.CollisionGroupManager;
 import org.terasology.utilities.NativeHelper;
+import org.terasology.world.block.family.BlockFamilyFactoryRegistry;
+import org.terasology.world.block.family.DefaultBlockFamilyFactoryRegistry;
 import org.terasology.world.block.management.BlockManager;
 import org.terasology.world.block.management.BlockManagerImpl;
 
@@ -69,7 +71,8 @@ public abstract class TerasologyTestingEnvironment {
     private static ModManager modManager;
     private static NetworkSystem networkSystem;
     private ComponentSystemManager componentSystemManager;
-    private Timer mockTimer;
+    private EngineTime mockTime;
+    private static BlockFamilyFactoryRegistry blockFamilyFactoryRegistry;
 
     @BeforeClass
     public static void setupEnvironment() throws Exception {
@@ -77,7 +80,8 @@ public abstract class TerasologyTestingEnvironment {
         if (!setup) {
             setup = true;
             bindLwjgl();
-            blockManager = new BlockManagerImpl();
+            blockFamilyFactoryRegistry = new DefaultBlockFamilyFactoryRegistry();
+            blockManager = new BlockManagerImpl(blockFamilyFactoryRegistry);
             CoreRegistry.put(BlockManager.class, blockManager);
 
             config = new Config();
@@ -106,16 +110,17 @@ public abstract class TerasologyTestingEnvironment {
             CoreRegistry.put(CollisionGroupManager.class, collisionGroupManager);
             CoreRegistry.put(ModManager.class, modManager);
         }
-        PathManager.getInstance().setCurrentWorldTitle("world1");
+        PathManager.getInstance().setCurrentSaveTitle("world1");
     }
 
     @Before
     public void setup() throws Exception {
-        mockTimer = mock(Timer.class);
-        CoreRegistry.put(Timer.class, mockTimer);
-        networkSystem = new NetworkSystemImpl(mockTimer);
+        mockTime = mock(EngineTime.class);
+        CoreRegistry.put(Time.class, mockTime);
+        networkSystem = new NetworkSystemImpl(mockTime);
         CoreRegistry.put(NetworkSystem.class, networkSystem);
         engineEntityManager = new EntitySystemBuilder().build(CoreRegistry.get(ModManager.class), networkSystem);
+
         componentSystemManager = new ComponentSystemManager();
         CoreRegistry.put(ComponentSystemManager.class, componentSystemManager);
         LoadPrefabs prefabLoadStep = new LoadPrefabs();

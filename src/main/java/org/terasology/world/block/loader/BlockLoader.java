@@ -79,8 +79,9 @@ public class BlockLoader implements BlockBuilderHelper {
     private BlockShape trimmedLoweredShape;
 
     private WorldAtlasBuilder atlasBuilder = new WorldAtlasBuilder();
+    private BlockFamilyFactoryRegistry blockFamilyFactoryRegistry;
 
-    public BlockLoader() {
+    public BlockLoader(BlockFamilyFactoryRegistry blockFamilyFactoryRegistry) {
         parser = new JsonParser();
         gson = new GsonBuilder()
                 .registerTypeAdapterFactory(new CaseInsensitiveEnumTypeAdapterFactory())
@@ -92,11 +93,11 @@ public class BlockLoader implements BlockBuilderHelper {
         cubeShape = (BlockShape) Assets.get(new AssetUri(AssetType.SHAPE, "engine:cube"));
         loweredShape = (BlockShape) Assets.get(new AssetUri(AssetType.SHAPE, "engine:loweredCube"));
         trimmedLoweredShape = (BlockShape) Assets.get(new AssetUri(AssetType.SHAPE, "engine:trimmedLoweredCube"));
+        this.blockFamilyFactoryRegistry = blockFamilyFactoryRegistry;
     }
 
     public LoadBlockDefinitionResults loadBlockDefinitions() {
         logger.info("Loading Blocks...");
-        BlockFamilyFactoryRegistry blockFamilyFactoryRegistry = CoreRegistry.get(BlockFamilyFactoryRegistry.class);
 
         LoadBlockDefinitionResults result = new LoadBlockDefinitionResults();
         for (AssetUri blockDefUri : Assets.list(AssetType.BLOCK_DEFINITION)) {
@@ -126,7 +127,7 @@ public class BlockLoader implements BlockBuilderHelper {
                         if (blockDef.shapes.isEmpty()) {
                             BlockFamilyFactory familyFactory = blockFamilyFactoryRegistry.getBlockFamilyFactory(blockDef.rotation);
                             if (familyFactory == null) {
-                                logger.error("Invalid rotation '{}', reverting to symmetric");
+                                logger.error("Invalid rotation '{}', reverting to symmetric", blockDef.rotation);
                                 result.families.add(new SymmetricFamily(new BlockUri(blockDefUri.getPackage(), blockDefUri.getAssetName()), constructSingleBlock(blockDefUri, blockDef), blockDef.categories));
                             } else {
                                 result.families.add(familyFactory.createBlockFamily(this, blockDefUri, blockDef, blockDefJson));

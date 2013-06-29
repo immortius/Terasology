@@ -28,6 +28,7 @@ import org.terasology.engine.CoreRegistry;
 import org.terasology.entitySystem.EntityManager;
 import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.event.ReceiveEvent;
+import org.terasology.entitySystem.RegisterMode;
 import org.terasology.entitySystem.lifecycleEvents.OnActivatedComponent;
 import org.terasology.entitySystem.systems.RegisterSystem;
 import org.terasology.entitySystem.systems.RenderSystem;
@@ -59,7 +60,7 @@ import static org.lwjgl.opengl.GL11.glVertex3f;
 /**
  * @author Immortius
  */
-@RegisterSystem(whenHeadless = false)
+@RegisterSystem(RegisterMode.CLIENT)
 public class SkeletonRenderer implements RenderSystem, UpdateSubscriberSystem {
 
     private static final Logger logger = LoggerFactory.getLogger(SkeletonRenderer.class);
