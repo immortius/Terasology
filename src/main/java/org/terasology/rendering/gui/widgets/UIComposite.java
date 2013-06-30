@@ -15,7 +15,6 @@
  */
 package org.terasology.rendering.gui.widgets;
 
-import org.terasology.rendering.gui.framework.Canvas;
 import org.terasology.rendering.gui.framework.UIDisplayContainer;
 import org.terasology.rendering.gui.framework.UIDisplayElement;
 import org.terasology.rendering.gui.framework.style.Style;
@@ -42,8 +41,8 @@ public class UIComposite extends UIDisplayContainer {
     }
 
     @Override
-    public void render(Canvas canvas) {
-        super.render(canvas);
+    public void render() {
+        super.render();
         renderLayout();
     }
 

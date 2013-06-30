@@ -27,7 +27,7 @@ import java.util.List;
  *
  * @author Immortius <immortius@gmail.com>
  */
-public interface Prefab extends ComponentContainer, Asset {
+public interface Prefab extends ComponentContainer, Asset<PrefabData> {
 
     /**
      * @return The identifier for this prefab

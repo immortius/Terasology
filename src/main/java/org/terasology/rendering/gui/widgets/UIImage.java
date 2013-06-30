@@ -21,10 +21,11 @@ import org.newdawn.slick.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.logic.manager.ShaderManager;
-import org.terasology.rendering.assets.texture.Texture;
-import org.terasology.rendering.gui.framework.Canvas;
-import org.terasology.rendering.gui.framework.UIDisplayContainer;
 import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.gui.framework.UIDisplayContainer;
+import org.terasology.rendering.opengl.OpenGLMesh;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
 
@@ -82,7 +83,7 @@ public class UIImage extends UIDisplayContainer {
     }
 
     @Override
-    public void render(Canvas canvas) {
+    public void render() {
         if (mesh == null)
             return;
 
@@ -93,7 +94,7 @@ public class UIImage extends UIDisplayContainer {
 
         if (texture != null) {
             ShaderManager.getInstance().enableDefaultTextured();
-            glBindTexture(GL11.GL_TEXTURE_2D, texture != null ? texture.getId() : 0);
+            glBindTexture(GL11.GL_TEXTURE_2D, texture != null ? ((OpenGLTexture) texture).getId() : 0);
             glMatrixMode(GL_TEXTURE);
             glPushMatrix();
             glTranslatef(textureOrigin.x, textureOrigin.y, 0.0f);
@@ -105,7 +106,7 @@ public class UIImage extends UIDisplayContainer {
                 glRotatef(rotate, 0f, 0f, 1f);
             }
             glScalef(getSize().x, getSize().y, 1.0f);
-            mesh.render();
+            ((OpenGLMesh) mesh).render();
             glPopMatrix();
 
             glMatrixMode(GL_TEXTURE);
@@ -117,11 +118,11 @@ public class UIImage extends UIDisplayContainer {
                 glRotatef(rotate, 0f, 0f, 1f);
             }
             glScalef(getSize().x, getSize().y, 0.0f);
-            mesh.render();
+            ((OpenGLMesh) mesh).render();
             glPopMatrix();
         }
 
-        super.render(canvas);
+        super.render();
     }
 
     /**

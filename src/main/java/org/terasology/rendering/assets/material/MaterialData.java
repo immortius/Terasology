@@ -13,17 +13,13 @@ import java.util.Map;
  */
 public class MaterialData implements AssetData {
     private Shader shader;
-    Map<String, Texture> textures;
-    Map<String, Float> floatParams;
-    Map<String, float[]> floatArrayParams = Maps.newHashMap();
-    Map<String, Integer> intParams = Maps.newHashMap();
+    private Map<String, Texture> textures = Maps.newHashMap();
+    private Map<String, Float> floatParams = Maps.newHashMap();
+    private Map<String, float[]> floatArrayParams = Maps.newHashMap();
+    private Map<String, Integer> intParams = Maps.newHashMap();
 
-    public MaterialData(Shader shader, Map<String, Texture> initialTextureParams, Map<String, Float> initialFloatParams, Map<String, float[]> initialFloatArrayParams, Map<String, Integer> initialIntParams) {
+    public MaterialData(Shader shader) {
         this.shader = shader;
-        this.textures = ImmutableMap.copyOf(initialTextureParams);
-        this.floatParams = ImmutableMap.copyOf(initialFloatParams);
-        this.floatArrayParams = ImmutableMap.copyOf(initialFloatArrayParams);
-        this.intParams = ImmutableMap.copyOf(initialIntParams);
     }
 
     public Shader getShader() {
@@ -34,15 +30,51 @@ public class MaterialData implements AssetData {
         return textures;
     }
 
+    public void setParam(String parmName, Texture value) {
+        textures.put(parmName, value);
+    }
+
     public Map<String, Float> getFloatParams() {
         return floatParams;
+    }
+
+    public void setParam(String parmName, float value) {
+        floatParams.put(parmName, value);
     }
 
     public Map<String, float[]> getFloatArrayParams() {
         return floatArrayParams;
     }
 
+    public void setParam(String parmName, float[] value) {
+        floatArrayParams.put(parmName, value);
+    }
+
     public Map<String, Integer> getIntegerParams() {
         return intParams;
+    }
+
+    public void setParam(String parmName, int value) {
+        intParams.put(parmName, value);
+    }
+
+    public void setTextureParams(Map<String, Texture> textures) {
+        this.textures.clear();
+        textures.putAll(textures);
+    }
+
+    public void setFloatParams(Map<String, Float> floatParams) {
+        this.floatParams.clear();
+        this.floatParams.putAll(floatParams);
+    }
+
+    public void setFloatArrayParams(Map<String, float[]> floatArrayParams) {
+        this.floatArrayParams.clear();
+        this.floatArrayParams.putAll(floatArrayParams);
+    }
+
+    public void setIntParams(Map<String, Integer> intParams) {
+        this.intParams.clear();
+        this.intParams.putAll(intParams);
     }
 }

@@ -24,6 +24,7 @@ import org.terasology.config.AdvancedConfig;
 import org.terasology.config.Config;
 import org.terasology.engine.CoreRegistry;
 import org.terasology.math.AABB;
+import org.terasology.math.Region3i;
 import org.terasology.math.TeraMath;
 import org.terasology.math.Vector3i;
 import org.terasology.protobuf.ChunksProtobuf;
@@ -105,6 +106,7 @@ public class Chunk implements Externalizable {
     public static final int SIZE_X = 16;
     public static final int SIZE_Y = 256;
     public static final int SIZE_Z = 16;
+    public static final Region3i CHUNK_REGION = Region3i.createFromMinAndSize(new Vector3i(0, 0, 0), new Vector3i(SIZE_X, SIZE_Y, SIZE_Z));
     public static final int INNER_CHUNK_POS_FILTER_X = TeraMath.ceilPowerOfTwo(SIZE_X) - 1;
     public static final int INNER_CHUNK_POS_FILTER_Z = TeraMath.ceilPowerOfTwo(SIZE_Z) - 1;
     public static final int POWER_X = TeraMath.sizeOfPower(SIZE_X);
@@ -308,10 +310,18 @@ public class Chunk implements Externalizable {
     }
 
     public Block getBlock(Vector3i pos) {
+        if (!CHUNK_REGION.encompasses(pos)) {
+            logger.warn("Accessed block outside of chunk");
+            return BlockManager.getAir();
+        }
         return blockManager.getBlock((byte) blockData.get(pos.x, pos.y, pos.z));
     }
 
     public Block getBlock(int x, int y, int z) {
+        if (!CHUNK_REGION.encompasses(x, y, z)) {
+            logger.warn("Accessed block outside of chunk");
+            return BlockManager.getAir();
+        }
         return blockManager.getBlock((byte) blockData.get(x, y, z));
     }
 

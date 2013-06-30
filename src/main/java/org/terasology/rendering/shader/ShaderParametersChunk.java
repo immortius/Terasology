@@ -23,6 +23,7 @@ import org.terasology.engine.Time;
 import org.terasology.logic.manager.PostProcessingRenderer;
 import org.terasology.logic.players.LocalPlayer;
 import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.rendering.world.WorldRenderer;
 import org.terasology.world.block.management.BlockManager;
 
@@ -49,15 +50,15 @@ public class ShaderParametersChunk implements IShaderParameters {
         Time time = CoreRegistry.get(Time.class);
 
         GL13.glActiveTexture(GL13.GL_TEXTURE1);
-        glBindTexture(GL11.GL_TEXTURE_2D, lava.getId());
+        glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture) lava).getId());
         GL13.glActiveTexture(GL13.GL_TEXTURE2);
-        glBindTexture(GL11.GL_TEXTURE_2D, water.getId());
+        glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture) water).getId());
         GL13.glActiveTexture(GL13.GL_TEXTURE3);
-        glBindTexture(GL11.GL_TEXTURE_2D, effects.getId());
+        glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture) effects).getId());
         GL13.glActiveTexture(GL13.GL_TEXTURE4);
         PostProcessingRenderer.getInstance().getFBO("sceneReflected").bindTexture();
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        glBindTexture(GL11.GL_TEXTURE_2D, terrain.getId());
+        glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture) terrain).getId());
 
         program.setInt("textureLava", 1);
         program.setInt("textureWaterNormal", 2);

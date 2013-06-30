@@ -17,7 +17,6 @@ package org.terasology.rendering.gui.framework.style;
 
 import org.lwjgl.opengl.GL11;
 import org.newdawn.slick.Color;
-import org.terasology.rendering.gui.framework.Canvas;
 import org.terasology.rendering.gui.framework.UIDisplayContainer;
 
 import javax.vecmath.Vector4f;
@@ -58,7 +57,7 @@ public class StyleBorderSolid extends UIDisplayContainer implements Style {
     }
 
     @Override
-    public void render(Canvas canvas) {
+    public void render() {
         glPushMatrix();
         glLoadIdentity();
         glTranslatef(getAbsolutePosition().x, getAbsolutePosition().y, 0);

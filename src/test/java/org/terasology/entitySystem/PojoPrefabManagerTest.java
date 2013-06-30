@@ -7,8 +7,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.terasology.asset.AssetType;
 import org.terasology.asset.AssetUri;
+import org.terasology.asset.Assets;
 import org.terasology.entitySystem.internal.PojoPrefab;
 import org.terasology.entitySystem.prefab.Prefab;
+import org.terasology.entitySystem.prefab.PrefabData;
 import org.terasology.logic.location.LocationComponent;
 import org.terasology.entitySystem.metadata.ComponentLibrary;
 import org.terasology.entitySystem.metadata.EntitySystemLibrary;
@@ -41,7 +43,6 @@ public class PojoPrefabManagerTest {
                 .build();
         entitySystemLibrary = new EntitySystemLibraryImpl(lib);
         componentLibrary = entitySystemLibrary.getComponentLibrary();
-        componentLibrary.register(LocationComponent.class);
         prefabManager = new PojoPrefabManager(componentLibrary);
     }
 
@@ -52,7 +53,9 @@ public class PojoPrefabManagerTest {
 
     @Test
     public void retrievePrefab() {
-        Prefab prefab = new PojoPrefab(new AssetUri(AssetType.PREFAB, PREFAB_NAME), null, true, new StringComponent("Test"));
+        PrefabData data = new PrefabData();
+        data.addComponent(new StringComponent("Test"));
+        Prefab prefab = Assets.generateAsset(new AssetUri(AssetType.PREFAB, PREFAB_NAME), data, Prefab.class);
         prefabManager.registerPrefab(prefab);
         Prefab ref = prefabManager.getPrefab(PREFAB_NAME);
         assertNotNull(ref);

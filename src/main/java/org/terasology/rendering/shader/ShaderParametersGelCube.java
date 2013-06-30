@@ -21,6 +21,7 @@ import org.terasology.asset.Assets;
 import org.terasology.engine.CoreRegistry;
 import org.terasology.logic.players.LocalPlayer;
 import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.rendering.world.WorldRenderer;
 
 import static org.lwjgl.opengl.GL11.glBindTexture;
@@ -40,7 +41,7 @@ public class ShaderParametersGelCube implements IShaderParameters {
         WorldRenderer worldRendererd = CoreRegistry.get(WorldRenderer.class);
 
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        glBindTexture(GL11.GL_TEXTURE_2D, slimeTex.getId());
+        glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture) slimeTex).getId());
 
         if (localPlayer != null) {
             program.setInt("carryingTorch", localPlayer.isCarryingTorch() ? 1 : 0);

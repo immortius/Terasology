@@ -60,7 +60,12 @@ public class MaterialLoader implements AssetLoader<MaterialData> {
             return null;
         }
 
-        return new MaterialData(shader, metadata.textures, metadata.floatParams, metadata.floatArrayParams, metadata.intParams);
+        MaterialData data = new MaterialData(shader);
+        data.setTextureParams(metadata.textures);
+        data.setFloatParams(metadata.floatParams);
+        data.setFloatArrayParams(metadata.floatArrayParams);
+        data.setIntParams(metadata.intParams);
+        return data;
     }
 
     private static class MaterialMetadata {

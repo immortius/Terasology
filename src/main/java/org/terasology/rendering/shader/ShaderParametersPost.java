@@ -23,6 +23,7 @@ import org.terasology.engine.CoreRegistry;
 import org.terasology.logic.manager.PostProcessingRenderer;
 import org.terasology.logic.players.LocalPlayer;
 import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.rendering.world.WorldRenderer;
 import org.terasology.world.WorldProvider;
 import org.terasology.world.block.Block;
@@ -52,7 +53,7 @@ public class ShaderParametersPost implements IShaderParameters {
             PostProcessingRenderer.getInstance().getFBO("sceneBlur1").bindTexture();
         }
         GL13.glActiveTexture(GL13.GL_TEXTURE3);
-        glBindTexture(GL11.GL_TEXTURE_2D, texture.getId());
+        glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture)texture).getId());
         GL13.glActiveTexture(GL13.GL_TEXTURE4);
         scene.bindDepthTexture();
         GL13.glActiveTexture(GL13.GL_TEXTURE0);

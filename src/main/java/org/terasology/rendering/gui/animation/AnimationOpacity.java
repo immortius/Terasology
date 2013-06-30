@@ -20,6 +20,7 @@ import org.lwjgl.opengl.GL11;
 import org.terasology.logic.manager.PostProcessingRenderer;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.opengl.OpenGLMesh;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
 import org.terasology.rendering.shader.ShaderProgram;
@@ -99,7 +100,7 @@ public class AnimationOpacity extends Animation {
         glLoadIdentity();
         glTranslatef(target.getAbsolutePosition().x, target.getAbsolutePosition().y, 0f);
         glScalef(target.getSize().x, target.getSize().y, 1.0f);
-        mesh.render();
+        ((OpenGLMesh)mesh).render();
         glPopMatrix();
         glMatrixMode(GL_TEXTURE);
         glPopMatrix();

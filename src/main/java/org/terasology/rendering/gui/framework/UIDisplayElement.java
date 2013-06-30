@@ -147,13 +147,13 @@ public abstract class UIDisplayElement {
             if (positionType == EPositionType.RELATIVE) {
                 glPushMatrix();
                 glTranslatef(getPosition().x, getPosition().y, 0);
-                render(canvas);
+                render();
                 glPopMatrix();
             } else if (positionType == EPositionType.ABSOLUTE) {
                 glPushMatrix();
                 glLoadIdentity();
                 glTranslatef(getPosition().x, getPosition().y, 0);
-                render(canvas);
+                render();
                 glPopMatrix();
             }
 
@@ -210,7 +210,6 @@ public abstract class UIDisplayElement {
                         if (!consumed) {
                             mouseIsDown = true;
                             if (consumeEvents) {
-                                //System.out.println("consumed mouse down event (intersect): " + this);
                                 consumed = true;
                             }
                         }
@@ -222,13 +221,11 @@ public abstract class UIDisplayElement {
                         //check double click
                         if ((System.currentTimeMillis() - lastTime) < doubleClickTimeout && lastButton == button) {
                             notifyDoubleClickListeners(button);
-                            //System.out.println("double click! " + this);
                         }
                         lastTime = System.currentTimeMillis();
                         lastButton = button;
 
                         if (!consumed && consumeEvents) {
-                            //System.out.println("consumed mouse up/click event (intersect): " + this);
                             consumed = true;
                         }
                     }
@@ -238,7 +235,6 @@ public abstract class UIDisplayElement {
                         if (!consumed) {
                             lastMouseState = EMouseEvents.ENTER;
                             if (consumeEvents) {
-                                //System.out.println("consumed mouse enter event: " + this);
                                 consumed = true;
                             }
                         }
@@ -255,7 +251,6 @@ public abstract class UIDisplayElement {
                     if (!consumed) {
                         lastMouseState = EMouseEvents.ENTER;
                         if (consumeEvents) {
-                            //System.out.println("consumed mouse hover event: " + this);
                             consumed = true;
                         }
                     }
@@ -342,9 +337,8 @@ public abstract class UIDisplayElement {
 
     /**
      * Render the display element. Will be executed every tick.
-     * @param canvas
      */
-    public abstract void render(Canvas canvas);
+    public abstract void render();
 
     /**
      * Update the display element. For tasks which needs continuously updates. Will be executed every tick and needs to be avoided.
@@ -884,7 +878,6 @@ public abstract class UIDisplayElement {
             System.out.print(parent.getClass().getSimpleName() + " (id: " + parent.getId() + ")");
             parent = parent.getParent();
         }
-        System.out.println();
     }
 
     /**

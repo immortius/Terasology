@@ -17,7 +17,6 @@ package org.terasology.rendering.gui.windows.metricsScreen;
 
 import com.google.common.collect.Lists;
 import org.terasology.performanceMonitor.PerformanceMonitor;
-import org.terasology.rendering.gui.framework.Canvas;
 import org.terasology.rendering.gui.widgets.UILabel;
 import org.terasology.rendering.gui.widgets.UIWindow;
 
@@ -67,11 +66,10 @@ public class UIScreenMetrics extends UIWindow {
 
     /**
      * Renders the HUD on the screen.
-     * @param canvas
      */
     @Override
-    public void render(Canvas canvas) {
-        super.render(canvas);
+    public void render() {
+        super.render();
     }
 
     @Override

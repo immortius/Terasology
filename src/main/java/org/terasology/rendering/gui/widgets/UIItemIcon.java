@@ -24,6 +24,7 @@ import org.terasology.logic.inventory.ItemComponent;
 import org.terasology.rendering.assets.texture.Texture;
 import org.terasology.rendering.icons.Icon;
 import org.terasology.rendering.gui.framework.UIDisplayContainer;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.world.block.Block;
 import org.terasology.world.block.items.BlockItemComponent;
 import org.terasology.world.block.family.BlockFamily;
@@ -156,7 +157,7 @@ public class UIItemIcon extends UIDisplayContainer {
         GL11.glScalef(20f, 20f, 20f);
         GL11.glRotatef(170f, 1f, 0f, 0f);
         GL11.glRotatef(-16f, 0f, 1f, 0f);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, terrainTex.getId());
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture)terrainTex).getId());
 
         Block block = blockFamily.getArchetypeBlock();
         block.renderWithLightValue(1.0f);

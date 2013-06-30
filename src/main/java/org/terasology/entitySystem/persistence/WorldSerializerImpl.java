@@ -29,10 +29,12 @@ import org.slf4j.LoggerFactory;
 import org.terasology.asset.AssetManager;
 import org.terasology.asset.AssetType;
 import org.terasology.asset.AssetUri;
+import org.terasology.asset.Assets;
 import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.EngineEntityManager;
 import org.terasology.entitySystem.prefab.Prefab;
+import org.terasology.entitySystem.prefab.PrefabData;
 import org.terasology.entitySystem.prefab.PrefabManager;
 import org.terasology.entitySystem.metadata.ClassMetadata;
 import org.terasology.entitySystem.metadata.ComponentLibrary;
@@ -150,8 +152,8 @@ public class WorldSerializerImpl implements WorldSerializer {
 
 
     private void createPrefab(EntityData.Prefab prefabData) {
-        Prefab prefab = prefabSerializer.deserialize(prefabData, new AssetUri(AssetType.PREFAB, prefabData.getName()));
-        AssetManager.getInstance().addAssetTemporary(prefab.getURI(), prefab);
+        PrefabData protoPrefab = prefabSerializer.deserialize(prefabData);
+        Prefab prefab = Assets.generateAsset(new AssetUri(AssetType.PREFAB, prefabData.getName()), protoPrefab, Prefab.class);
         prefabManager.registerPrefab(prefab);
     }
 

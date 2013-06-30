@@ -3,6 +3,8 @@ package org.terasology.logic.location;
 import com.bulletphysics.linearmath.QuaternionUtil;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.terasology.TerasologyTestingEnvironment;
 import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.lifecycleEvents.BeforeRemoveComponent;
@@ -21,14 +23,14 @@ import static org.mockito.Mockito.when;
  */
 public class LocationComponentTest extends TerasologyTestingEnvironment {
 
-    LocationComponent loc;
-    EntityRef entity;
-    Vector3f pos1 = new Vector3f(1, 2, 3);
-    Vector3f pos2 = new Vector3f(2, 3, 4);
-    Vector3f pos1plus2 = new Vector3f(3, 5, 7);
-    Quat4f yawRotation = new Quat4f(0, 0, 0, 1);
-    Quat4f pitchRotation = new Quat4f(0, 0, 0, 1);
-    Quat4f yawPitch = new Quat4f(0, 0, 0, 1);
+    private LocationComponent loc;
+    private EntityRef entity;
+    private Vector3f pos1 = new Vector3f(1, 2, 3);
+    private Vector3f pos2 = new Vector3f(2, 3, 4);
+    private Vector3f pos1plus2 = new Vector3f(3, 5, 7);
+    private Quat4f yawRotation = new Quat4f(0, 0, 0, 1);
+    private Quat4f pitchRotation = new Quat4f(0, 0, 0, 1);
+    private Quat4f yawPitch = new Quat4f(0, 0, 0, 1);
 
     @Before
     public void setup() {
@@ -39,9 +41,6 @@ public class LocationComponentTest extends TerasologyTestingEnvironment {
         QuaternionUtil.setEuler(yawRotation, TeraMath.DEG_TO_RAD * 90, 0, 0);
         QuaternionUtil.setEuler(pitchRotation, 0, TeraMath.DEG_TO_RAD * 45, 0);
         QuaternionUtil.setEuler(yawPitch, TeraMath.DEG_TO_RAD * 90, TeraMath.DEG_TO_RAD * 45, 0);
-
-//        CoreRegistry.get(ComponentSystemManager.class).register(locationSystem, "engine:locationSystem");
-//        CoreRegistry.get(ComponentSystemManager.class).initialise();
     }
 
     @Test
@@ -266,12 +265,10 @@ public class LocationComponentTest extends TerasologyTestingEnvironment {
 
         loc.setWorldPosition(new Vector3f(2, 0, 0));
         Location.attachChild(parentEntity, entity);
-        System.out.println(entity.toFullDescription());
         Location locationSystem = new Location();
         locationSystem.onDestroyed(BeforeRemoveComponent.newInstance(), parentEntity);
         when(parentEntity.getComponent(LocationComponent.class)).thenReturn(null);
         when(parentEntity.exists()).thenReturn(false);
-        System.out.println(entity.toFullDescription());
 
         TeraAssert.assertEquals(new Vector3f(2, 0, 0), loc.getWorldPosition(), 0.000001f);
     }

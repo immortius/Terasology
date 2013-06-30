@@ -24,26 +24,7 @@ import java.awt.image.BufferedImage;
 /**
  * @author Immortius
  */
-public class Tile implements Asset {
-    private AssetUri uri;
-    private BufferedImage image;
+public interface Tile extends Asset<TileData> {
 
-
-    public Tile(AssetUri uri, BufferedImage image) {
-        this.uri = uri;
-        this.image = image;
-    }
-
-    @Override
-    public AssetUri getURI() {
-        return uri;
-    }
-
-    @Override
-    public void dispose() {
-    }
-
-    public BufferedImage getImage() {
-        return image;
-    }
+    BufferedImage getImage();
 }

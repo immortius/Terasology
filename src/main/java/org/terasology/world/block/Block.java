@@ -572,8 +572,9 @@ public class Block {
         Transform t = new Transform(new Matrix4f(new Quat4f(0, 0, 0, 1), offset, 1.0f));
         Vector3f min = new Vector3f();
         Vector3f max = new Vector3f();
-        shape.getAabb(t, min, max);
-
+        if (shape != null) {
+            shape.getAabb(t, min, max);
+        }
         bounds = AABB.createMinMax(min, max);
     }
 

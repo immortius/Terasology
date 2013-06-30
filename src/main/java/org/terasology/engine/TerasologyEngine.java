@@ -48,12 +48,24 @@ import org.terasology.network.NetworkSystem;
 import org.terasology.network.internal.NetworkSystemImpl;
 import org.terasology.performanceMonitor.PerformanceMonitor;
 import org.terasology.physics.CollisionGroupManager;
+import org.terasology.rendering.assets.animation.MeshAnimation;
+import org.terasology.rendering.assets.animation.MeshAnimationData;
+import org.terasology.rendering.assets.animation.MeshAnimationImpl;
 import org.terasology.rendering.assets.font.Font;
 import org.terasology.rendering.assets.font.FontData;
 import org.terasology.rendering.assets.font.FontImpl;
+import org.terasology.rendering.assets.material.Material;
+import org.terasology.rendering.assets.material.MaterialData;
+import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.assets.mesh.MeshData;
 import org.terasology.rendering.assets.shader.ShaderData;
+import org.terasology.rendering.assets.skeletalmesh.SkeletalMesh;
+import org.terasology.rendering.assets.skeletalmesh.SkeletalMeshData;
 import org.terasology.rendering.assets.texture.TextureData;
+import org.terasology.rendering.opengl.OpenGLMaterial;
+import org.terasology.rendering.opengl.OpenGLMesh;
 import org.terasology.rendering.opengl.OpenGLShader;
+import org.terasology.rendering.opengl.OpenGLSkeletalMesh;
 import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.utilities.NativeHelper;
 import org.terasology.version.TerasologyVersion;
@@ -328,6 +340,31 @@ public class TerasologyEngine implements GameEngine {
             @Override
             public Font buildAsset(AssetUri uri, FontData data) {
                 return new FontImpl(uri, data);
+            }
+        });
+        AssetManager.getInstance().setAssetFactory(AssetType.MATERIAL, new AssetFactory<MaterialData, Material>() {
+            @Override
+            public Material buildAsset(AssetUri uri, MaterialData data) {
+                return new OpenGLMaterial(uri, data);
+            }
+        });
+        AssetManager.getInstance().setAssetFactory(AssetType.MESH, new AssetFactory<MeshData, Mesh>() {
+            @Override
+            public Mesh buildAsset(AssetUri uri, MeshData data) {
+                return new OpenGLMesh(uri, data);
+            }
+        });
+        AssetManager.getInstance().setAssetFactory(AssetType.SKELETON_MESH, new AssetFactory<SkeletalMeshData, SkeletalMesh>() {
+            @Override
+            public SkeletalMesh buildAsset(AssetUri uri, SkeletalMeshData data) {
+                return new OpenGLSkeletalMesh(uri, data);
+            }
+        });
+        AssetManager.getInstance().setAssetFactory(AssetType.ANIMATION, new AssetFactory<MeshAnimationData, MeshAnimation>() {
+
+            @Override
+            public MeshAnimation buildAsset(AssetUri uri, MeshAnimationData data) {
+                return new MeshAnimationImpl(uri, data);
             }
         });
     }

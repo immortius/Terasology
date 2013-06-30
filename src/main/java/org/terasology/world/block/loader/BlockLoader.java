@@ -32,7 +32,6 @@ import org.terasology.asset.AssetManager;
 import org.terasology.asset.AssetType;
 import org.terasology.asset.AssetUri;
 import org.terasology.asset.Assets;
-import org.terasology.engine.CoreRegistry;
 import org.terasology.math.Rotation;
 import org.terasology.math.Side;
 import org.terasology.utilities.gson.CaseInsensitiveEnumTypeAdapterFactory;
@@ -51,7 +50,8 @@ import org.terasology.world.block.family.SymmetricFamily;
 import org.terasology.world.block.shapes.BlockMeshPart;
 import org.terasology.world.block.shapes.BlockShape;
 
-import javax.vecmath.*;
+import javax.vecmath.Vector2f;
+import javax.vecmath.Vector4f;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -126,12 +126,7 @@ public class BlockLoader implements BlockBuilderHelper {
 
                         if (blockDef.shapes.isEmpty()) {
                             BlockFamilyFactory familyFactory = blockFamilyFactoryRegistry.getBlockFamilyFactory(blockDef.rotation);
-                            if (familyFactory == null) {
-                                logger.error("Invalid rotation '{}', reverting to symmetric", blockDef.rotation);
-                                result.families.add(new SymmetricFamily(new BlockUri(blockDefUri.getPackage(), blockDefUri.getAssetName()), constructSingleBlock(blockDefUri, blockDef), blockDef.categories));
-                            } else {
-                                result.families.add(familyFactory.createBlockFamily(this, blockDefUri, blockDef, blockDefJson));
-                            }
+                            result.families.add(familyFactory.createBlockFamily(this, blockDefUri, blockDef, blockDefJson));
                         } else {
                             result.families.addAll(processMultiBlockFamily(blockDefUri, blockDef));
                         }
@@ -182,7 +177,7 @@ public class BlockLoader implements BlockBuilderHelper {
         }
 
         def.shape = (shape.getURI().getSimpleString());
-        if (shape.isCollisionSymmetric()) {
+        if (shape.isCollisionYawSymmetric()) {
             Block block = constructSingleBlock(blockDefUri, def);
             return new SymmetricFamily(uri, block, def.categories);
         } else {
@@ -241,7 +236,7 @@ public class BlockLoader implements BlockBuilderHelper {
                     familyUri = new BlockUri(blockDefUri.getPackage(), blockDefUri.getAssetName(), shapeUri.getPackage(), shapeUri.getAssetName());
                 }
                 blockDef.shape = shapeString;
-                if (shape.isCollisionSymmetric()) {
+                if (shape.isCollisionYawSymmetric()) {
                     Block block = constructSingleBlock(blockDefUri, blockDef);
                     result.add(new SymmetricFamily(familyUri, block, blockDef.categories));
                 } else {
@@ -382,7 +377,9 @@ public class BlockLoader implements BlockBuilderHelper {
     private void applyLoweredShape(Block block, BlockShape shape, Map<BlockPart, AssetUri> tileUris) {
         for (Side side : Side.values()) {
             BlockPart part = BlockPart.fromSide(side);
-            block.setLoweredLiquidMesh(part.getSide(), shape.getMeshPart(part).rotate(Rotation.none().getQuat4f()).mapTexCoords(atlasBuilder.getTexCoords(tileUris.get(part), true), Block.TEXTURE_OFFSET_WIDTH));
+            if (shape.getMeshPart(part) != null) {
+                block.setLoweredLiquidMesh(part.getSide(), shape.getMeshPart(part).rotate(Rotation.none().getQuat4f()).mapTexCoords(atlasBuilder.getTexCoords(tileUris.get(part), true), Block.TEXTURE_OFFSET_WIDTH));
+            }
         }
     }
 

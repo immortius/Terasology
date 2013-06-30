@@ -6,6 +6,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.terasology.asset.AssetType;
 import org.terasology.asset.AssetUri;
+import org.terasology.asset.Assets;
 import org.terasology.engine.bootstrap.EntitySystemBuilder;
 import org.terasology.entitySystem.EngineEntityManager;
 import org.terasology.entitySystem.EntityRef;
@@ -13,6 +14,7 @@ import org.terasology.entitySystem.internal.EntityInfoComponent;
 import org.terasology.entitySystem.internal.PojoPrefab;
 import org.terasology.entitySystem.metadata.ComponentLibrary;
 import org.terasology.entitySystem.prefab.Prefab;
+import org.terasology.entitySystem.prefab.PrefabData;
 import org.terasology.entitySystem.prefab.PrefabManager;
 import org.terasology.entitySystem.stubs.GetterSetterComponent;
 import org.terasology.entitySystem.stubs.IntegerComponent;
@@ -37,6 +39,7 @@ public class EntitySerializerTest {
     private EntitySerializer entitySerializer;
     private PrefabManager prefabManager;
     private static ModManager modManager;
+    private Prefab prefab;
 
     @BeforeClass
     public static void setupClass() {
@@ -54,14 +57,16 @@ public class EntitySerializerTest {
         entitySerializer = new EntitySerializer(entityManager);
         componentLibrary = entityManager.getComponentLibrary();
         prefabManager = entityManager.getPrefabManager();
+
+        PrefabData prefabData = new PrefabData();
+        prefabData.addComponent(new StringComponent("Value"));
+        prefab = Assets.generateAsset(new AssetUri(AssetType.PREFAB, "test:Test"), prefabData, Prefab.class);
+        prefabManager.registerPrefab(prefab);
     }
 
     @Test
     public void testDeltaNoUnchangedComponents() throws Exception {
-        Prefab prefab = new PojoPrefab(
-                new AssetUri(AssetType.PREFAB, "test:Test"),
-                null, true, new StringComponent("Value"));
-        prefabManager.registerPrefab(prefab);
+
 
         EntityRef entity = entityManager.create(prefab);
 
@@ -75,11 +80,6 @@ public class EntitySerializerTest {
 
     @Test
     public void testDeltaAddNewComponent() throws Exception {
-        Prefab prefab = new PojoPrefab(
-                new AssetUri(AssetType.PREFAB, "test:Test"),
-                null, true, new StringComponent("Value"));
-        prefabManager.registerPrefab(prefab);
-
         EntityRef entity = entityManager.create(prefab);
         entity.addComponent(new IntegerComponent(1));
 
@@ -99,11 +99,6 @@ public class EntitySerializerTest {
 
     @Test
     public void testDeltaRemoveComponent() throws Exception {
-        Prefab prefab = new PojoPrefab(
-                new AssetUri(AssetType.PREFAB, "test:Test"),
-                null, true, new StringComponent("Value"));
-        prefabManager.registerPrefab(prefab);
-
         EntityRef entity = entityManager.create(prefab);
         entity.removeComponent(StringComponent.class);
 
@@ -117,11 +112,6 @@ public class EntitySerializerTest {
 
     @Test
     public void testDeltaChangedComponent() throws Exception {
-        Prefab prefab = new PojoPrefab(
-                new AssetUri(AssetType.PREFAB, "test:Test"),
-                null, true, new StringComponent("Value"));
-        prefabManager.registerPrefab(prefab);
-
         EntityRef entity = entityManager.create(prefab);
         StringComponent comp = entity.getComponent(StringComponent.class);
         comp.value = "Delta";
@@ -139,11 +129,6 @@ public class EntitySerializerTest {
 
     @Test
     public void testDeltaLoadNoChange() throws Exception {
-        Prefab prefab = new PojoPrefab(
-                new AssetUri(AssetType.PREFAB, "test:Test"),
-                null, true, new StringComponent("Value"));
-        prefabManager.registerPrefab(prefab);
-
         EntityRef entity = entityManager.create("test:Test");
         EntityData.Entity entityData = entitySerializer.serialize(entity);
         entityManager.clear();
@@ -156,11 +141,6 @@ public class EntitySerializerTest {
 
     @Test
     public void testDeltaLoadAddedComponent() throws Exception {
-        Prefab prefab = new PojoPrefab(
-                new AssetUri(AssetType.PREFAB, "test:Test"),
-                null, true, new StringComponent("Value"));
-        prefabManager.registerPrefab(prefab);
-
         EntityRef entity = entityManager.create("test:Test");
         entity.addComponent(new IntegerComponent(2));
         EntityData.Entity entityData = entitySerializer.serialize(entity);
@@ -176,11 +156,6 @@ public class EntitySerializerTest {
 
     @Test
     public void testDeltaLoadRemovedComponent() throws Exception {
-        Prefab prefab = new PojoPrefab(
-                new AssetUri(AssetType.PREFAB, "test:Test"),
-                null, true, new StringComponent("Value"));
-        prefabManager.registerPrefab(prefab);
-
         EntityRef entity = entityManager.create("test:Test");
         entity.removeComponent(StringComponent.class);
         EntityData.Entity entityData = entitySerializer.serialize(entity);
@@ -193,11 +168,6 @@ public class EntitySerializerTest {
 
     @Test
     public void testDeltaLoadChangedComponent() throws Exception {
-        Prefab prefab = new PojoPrefab(
-                new AssetUri(AssetType.PREFAB, "test:Test"),
-                null, true, new StringComponent("Value"));
-        prefabManager.registerPrefab(prefab);
-
         EntityRef entity = entityManager.create("test:Test");
         StringComponent comp = entity.getComponent(StringComponent.class);
         comp.value = "Delta";
@@ -213,11 +183,6 @@ public class EntitySerializerTest {
 
     @Test
     public void testPrefabMaintainedOverSerialization() throws Exception {
-        Prefab prefab = new PojoPrefab(
-                new AssetUri(AssetType.PREFAB, "test:Test"),
-                null, true, new StringComponent("Value"));
-        prefabManager.registerPrefab(prefab);
-
         EntityRef entity = entityManager.create(prefab);
 
         EntityData.Entity entityData = entitySerializer.serialize(entity);

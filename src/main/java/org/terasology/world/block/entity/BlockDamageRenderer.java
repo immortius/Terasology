@@ -29,6 +29,8 @@ import org.terasology.logic.manager.ShaderManager;
 import org.terasology.math.Vector3i;
 import org.terasology.rendering.assets.texture.Texture;
 import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.opengl.OpenGLMesh;
+import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
 import org.terasology.rendering.world.WorldRenderer;
@@ -90,7 +92,7 @@ public class BlockDamageRenderer implements RenderSystem {
         if (effectsTexture == null) return;
 
         ShaderManager.getInstance().enableDefaultTextured();
-        glBindTexture(GL11.GL_TEXTURE_2D, effectsTexture.getId());
+        glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture)effectsTexture).getId());
         glEnable(GL11.GL_BLEND);
         glBlendFunc(GL_DST_COLOR, GL_ZERO);
         Vector3f cameraPosition = CoreRegistry.get(WorldRenderer.class).getActiveCamera().getPosition();
@@ -131,7 +133,7 @@ public class BlockDamageRenderer implements RenderSystem {
         glTranslatef(offset, 0f, 0f);
         glMatrixMode(GL_MODELVIEW);
 
-        overlayMesh.render();
+        ((OpenGLMesh)overlayMesh).render();
 
         glPopMatrix();
 

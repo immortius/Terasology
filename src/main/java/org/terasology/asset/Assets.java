@@ -243,4 +243,14 @@ public final class Assets {
         return null;
     }
 
+    public static <T extends Asset<U>, U extends AssetData> T generateAsset(AssetType type, U data, Class<T> assetClass) {
+        Asset<U> asset = AssetManager.getInstance().generateTemporaryAsset(type, data);
+        if (assetClass.isInstance(asset)) {
+            return assetClass.cast(asset);
+        }
+        return null;
+    }
+
+
+
 }

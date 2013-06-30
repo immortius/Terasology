@@ -20,6 +20,7 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.terasology.logic.manager.PostProcessingRenderer;
 import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.opengl.OpenGLMesh;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
 
@@ -95,7 +96,7 @@ public class AnimationRotate extends Animation {
         glRotatef(currentAngle, 0f, 0f, 1f);
         glTranslatef(-target.getSize().x / 2, -target.getSize().y / 2, 0f);
         glScalef(target.getSize().x, target.getSize().y, 1.0f);
-        mesh.render();
+        ((OpenGLMesh)mesh).render();
         glPopMatrix();
         glMatrixMode(GL_TEXTURE);
         glPopMatrix();

@@ -20,7 +20,18 @@ import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.entitySystem.common.NullIterator;
+import org.terasology.entitySystem.internal.PojoPrefab;
 import org.terasology.entitySystem.prefab.Prefab;
+import org.terasology.entitySystem.prefab.PrefabData;
+import org.terasology.entitySystem.prefab.PrefabLoader;
+import org.terasology.world.block.loader.Tile;
+import org.terasology.world.block.loader.TileData;
+import org.terasology.world.block.loader.TileImpl;
+import org.terasology.world.block.loader.TileLoader;
+import org.terasology.world.block.shapes.BlockShape;
+import org.terasology.world.block.shapes.BlockShapeData;
+import org.terasology.world.block.shapes.BlockShapeImpl;
+import org.terasology.world.block.shapes.JsonBlockShapeLoader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +49,24 @@ public class AssetManager {
     public static AssetManager getInstance() {
         if (instance == null) {
             instance = new AssetManager();
+            instance.setAssetFactory(AssetType.PREFAB, new AssetFactory<PrefabData, Prefab>() {
+                @Override
+                public Prefab buildAsset(AssetUri uri, PrefabData data) {
+                    return new PojoPrefab(uri, data);
+                }
+            });
+            instance.setAssetFactory(AssetType.BLOCK_TILE, new AssetFactory<TileData, Tile>() {
+                @Override
+                public Tile buildAsset(AssetUri uri, TileData data) {
+                    return new TileImpl(uri, data);
+                }
+            });
+            instance.setAssetFactory(AssetType.SHAPE, new AssetFactory<BlockShapeData, BlockShape>() {
+                @Override
+                public BlockShape buildAsset(AssetUri uri, BlockShapeData data) {
+                    return new BlockShapeImpl(uri, data);
+                }
+            });
         }
 
         return instance;
@@ -48,6 +77,8 @@ public class AssetManager {
     private Map<AssetUri, Asset> assetCache = Maps.newHashMap();
     private Map<AssetUri, AssetSource> overrides = Maps.newHashMap();
     private Map<AssetType, AssetFactory> factories = Maps.newHashMap();
+
+    private long tempId = 1;
 
     protected AssetManager() {
     }
@@ -93,7 +124,9 @@ public class AssetManager {
 
     private Asset loadAsset(AssetUri uri, boolean logErrors) {
 
-        if (!uri.isValid()) return null;
+        if (!uri.isValid()) {
+            return null;
+        }
 
         AssetFactory factory = factories.get(uri.getAssetType());
         if (factory == null) {
@@ -102,7 +135,9 @@ public class AssetManager {
         }
 
         Asset asset = assetCache.get(uri);
-        if (asset != null) return asset;
+        if (asset != null) {
+            return asset;
+        }
 
         List<URL> urls = getAssetURLs(uri);
         if (urls.size() == 0) {
@@ -242,7 +277,16 @@ public class AssetManager {
     }
 
     public <U extends AssetData> Asset<U> generateAsset(AssetUri uri, U data) {
-        return factories.get(uri.getAssetType()).buildAsset(uri, data);
+        AssetFactory assetFactory = factories.get(uri.getAssetType());
+        if (assetFactory == null) {
+            logger.warn("Unsupported asset type: {}", uri.getAssetType());
+            return null;
+        }
+        return assetFactory.buildAsset(uri, data);
+    }
+
+    public <U extends AssetData> Asset<U> generateTemporaryAsset(AssetType type, U data) {
+        return generateAsset(new AssetUri(type, "temp", Long.toString(tempId++)), data);
     }
 
     private class AllAssetIterator implements Iterator<AssetUri> {

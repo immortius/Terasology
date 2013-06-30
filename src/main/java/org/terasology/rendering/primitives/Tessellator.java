@@ -15,7 +15,6 @@
  */
 package org.terasology.rendering.primitives;
 
-import org.terasology.asset.AssetManager;
 import org.terasology.asset.AssetType;
 import org.terasology.asset.AssetUri;
 import org.terasology.asset.Assets;
@@ -151,5 +150,9 @@ public class Tessellator {
 
     public Mesh generateMesh(AssetUri uri) {
         return Assets.generateAsset(uri, meshData, Mesh.class);
+    }
+
+    public Mesh generateMesh() {
+        return Assets.generateAsset(AssetType.MESH, meshData, Mesh.class);
     }
 }

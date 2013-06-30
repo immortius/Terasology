@@ -19,9 +19,9 @@ import org.lwjgl.opengl.GL11;
 import org.terasology.asset.Assets;
 import org.terasology.logic.manager.ShaderManager;
 import org.terasology.rendering.assets.texture.Texture;
-import org.terasology.rendering.gui.framework.Canvas;
 import org.terasology.rendering.gui.framework.UIDisplayContainer;
 import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.opengl.OpenGLMesh;
 import org.terasology.rendering.opengl.OpenGLTexture;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
@@ -96,7 +96,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
     }
 
     @Override
-    public void render(Canvas canvas) {
+    public void render() {
         if (mesh == null)
             return;
 
@@ -106,7 +106,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
 
         if (shadow != null) {
             ShaderManager.getInstance().enableDefaultTextured();
-            glBindTexture(GL11.GL_TEXTURE_2D, (OpenGLTexture)shadow.getId());
+            glBindTexture(GL11.GL_TEXTURE_2D, ((OpenGLTexture)shadow).getId());
 
             if (direction == EShadowDirection.INSIDE) {
                 renderInside();
@@ -137,7 +137,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(90f, 0f, 0f, 1f);
             glTranslatef(-width.x, -getSize().x + offset[1], 0f);
             glScalef(width.x, getSize().x - offset[0] - offset[1], 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -147,7 +147,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(180f, 0f, 0f, 1f);
             glTranslatef(-getSize().x - width.y, -getSize().y + offset[3], 0f);
             glScalef(width.y, getSize().y - offset[2] - offset[3], 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -157,7 +157,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(-90f, 0f, 0f, 1f);
             glTranslatef(-getSize().y - width.z, offset[4], 0f);
             glScalef(width.z, getSize().x - offset[4] - offset[5], 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -167,7 +167,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(0f, 0f, 0f, 1f);
             glTranslatef(-width.w, offset[6], 0f);
             glScalef(width.w, getSize().y - offset[6] - offset[7], 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -191,7 +191,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(0f, 0f, 0f, 1f);
             glTranslatef(-width.w, -width.x, 0f);
             glScalef(width.w, width.x, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -201,7 +201,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(90f, 0f, 0f, 1f);
             glTranslatef(-width.x, -getSize().x - width.y, 0f);
             glScalef(width.x, width.y, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -211,7 +211,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(-90f, 0f, 0f, 1f);
             glTranslatef(-getSize().y - width.z, -width.w, 0f);
             glScalef(width.z, width.w, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -221,7 +221,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(-180f, 0f, 0f, 1f);
             glTranslatef(-getSize().x - width.y, -getSize().y - width.z, 0f);
             glScalef(width.y, width.z, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -248,7 +248,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(-90f, 0f, 0f, 1f);
             glTranslatef(-width.x, width.w, 0f);
             glScalef(width.x, getSize().x - width.y - width.w, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -258,7 +258,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(0f, 0f, 0f, 1f);
             glTranslatef(getSize().x - width.y, width.x, 0f);
             glScalef(width.y, getSize().y - width.x - width.z, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -268,7 +268,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(90f, 0f, 0f, 1f);
             glTranslatef(getSize().y - width.z, -getSize().x + width.y, 0f);
             glScalef(width.z, getSize().x - width.y - width.w, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -278,7 +278,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(180f, 0f, 0f, 1f);
             glTranslatef(-width.w, -getSize().y + width.z, 0f);
             glScalef(width.w, getSize().y - width.x - width.z, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -302,7 +302,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(180f, 0f, 0f, 1f);
             glTranslatef(-width.w, -width.x, 0f);
             glScalef(width.w, width.x, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -312,7 +312,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(-90f, 0f, 0f, 1f);
             glTranslatef(-width.x, getSize().x - width.y, 0f);
             glScalef(width.x, width.y, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -322,7 +322,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(90f, 0f, 0f, 1f);
             glTranslatef(getSize().y - width.z, -width.w, 0f);
             glScalef(width.z, width.w, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 
@@ -332,7 +332,7 @@ public class StyleShadow extends UIDisplayContainer implements Style {
             glRotatef(0f, 0f, 0f, 1f);
             glTranslatef(getSize().x - width.y, getSize().y - width.z, 0f);
             glScalef(width.y, width.z, 1.0f);
-            mesh.render();
+            ((OpenGLMesh)mesh).render();
             glPopMatrix();
         }
 

@@ -18,14 +18,18 @@ package org.terasology.network;
 
 import com.google.common.collect.Lists;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.terasology.TerasologyTestingEnvironment;
+import org.terasology.config.Config;
 import org.terasology.engine.EngineTime;
 import org.terasology.engine.Time;
 import org.terasology.entitySystem.EngineEntityManager;
 import org.terasology.entitySystem.EntityRef;
 import org.terasology.entitySystem.metadata.EntitySystemLibrary;
 import org.terasology.engine.CoreRegistry;
+import org.terasology.identity.CertificateGenerator;
+import org.terasology.identity.CertificatePair;
 import org.terasology.network.exceptions.HostingFailedException;
 import org.terasology.network.internal.NetworkSystemImpl;
 
@@ -41,12 +45,19 @@ public class TestNetwork extends TerasologyTestingEnvironment {
 
     private List<NetworkSystem> netSystems = Lists.newArrayList();
 
+    @Before
+    public void setup() throws Exception {
+        super.setup();
+        CertificateGenerator generator = new CertificateGenerator();
+        CertificatePair serverIdentity = generator.generateSelfSigned();
+        CoreRegistry.get(Config.class).getSecurity().setServerCredentials(serverIdentity.getPublicCert(), serverIdentity.getPrivateCert());
+    }
+
     @After
     public void cleanUp() {
         for (NetworkSystem sys : netSystems) {
             sys.shutdown();
         }
-
     }
 
     @Test
@@ -58,13 +69,13 @@ public class TestNetwork extends TerasologyTestingEnvironment {
         server.connectToEntitySystem(entityManager, CoreRegistry.get(EntitySystemLibrary.class), null);
         server.host(7777);
 
-        Thread.sleep(500);
+        Thread.sleep(200);
 
         NetworkSystem client = new NetworkSystemImpl(time);
         netSystems.add(client);
         client.join("localhost", 7777);
 
-        Thread.sleep(500);
+        Thread.sleep(2000);
 
         server.shutdown();
         client.shutdown();
