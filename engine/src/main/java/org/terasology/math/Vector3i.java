@@ -405,10 +405,4 @@ public class Vector3i extends javax.vecmath.Tuple3i implements Serializable {
         return new Vector3f(x, y, z);
     }
 
-    /**
-     * @return The equivalent Vector3d
-     */
-    public Vector3d toVector3d() {
-        return new Vector3d(x, y, z);
-    }
 }

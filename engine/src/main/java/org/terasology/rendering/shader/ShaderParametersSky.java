@@ -44,7 +44,7 @@ public class ShaderParametersSky extends ShaderParametersBase {
     @EditorRange(min = 0.0f, max = 10.0f)
     private float skyNightBrightness = 1.0f;
 
-    public static Vector3d getAllWeatherZenith(float thetaSunAngle, float turbidity) {
+    public static Vector3f getAllWeatherZenith(float thetaSunAngle, float turbidity) {
         float thetaSun = (float) Math.acos(thetaSunAngle);
         Vector4f cx1 = new Vector4f(0.0f, 0.00209f, -0.00375f, 0.00165f);
         Vector4f cx2 = new Vector4f(0.00394f, -0.03202f, 0.06377f, -0.02903f);
@@ -62,7 +62,7 @@ public class ShaderParametersSky extends ShaderParametersBase {
         float x = t2 * cx1.dot(theta) + turbidity * cx2.dot(theta) + cx3.dot(theta);
         float y = t2 * cy1.dot(theta) + turbidity * cy2.dot(theta) + cy3.dot(theta);
 
-        return new Vector3d(why, x, y);
+        return new Vector3f(why, x, y);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class ShaderParametersSky extends ShaderParametersBase {
             program.setFloat("colorExp", worldRenderer.getSkysphere().getColorExp(), true);
 
             Vector3f sunDirection = worldRenderer.getSkysphere().getSunDirection(false);
-            Vector3d zenithColor = getAllWeatherZenith(sunDirection.y, worldRenderer.getSkysphere().getTurbidity());
+            Vector3f zenithColor = getAllWeatherZenith(sunDirection.y, worldRenderer.getSkysphere().getTurbidity());
 
             program.setFloat("sunAngle", worldRenderer.getSkysphere().getSunPosAngle(), true);
             program.setFloat("turbidity", (Float) worldRenderer.getSkysphere().getTurbidity(), true);

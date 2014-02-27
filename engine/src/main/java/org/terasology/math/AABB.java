@@ -171,18 +171,6 @@ public final class AABB {
      * @param point The point to check for inclusion
      * @return True if containing
      */
-    public boolean contains(Vector3d point) {
-        return !(max.x < point.x || min.x >= point.x)
-                && !(max.y < point.y || min.y >= point.y)
-                && !(max.z < point.z || min.z >= point.z);
-    }
-
-    /**
-     * Returns true if the AABB contains the given point.
-     *
-     * @param point The point to check for inclusion
-     * @return True if containing
-     */
     public boolean contains(Vector3f point) {
         return !(max.x < point.x || min.x >= point.x)
                 && !(max.y < point.y || min.y >= point.y)
