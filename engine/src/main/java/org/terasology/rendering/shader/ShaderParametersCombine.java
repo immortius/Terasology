@@ -24,8 +24,6 @@ import org.terasology.rendering.cameras.Camera;
 import org.terasology.rendering.opengl.DefaultRenderingProcess;
 import org.terasology.rendering.world.WorldRenderer;
 
-import javax.vecmath.Vector4f;
-
 /**
  * Shader parameters for the Combine shader program.
  *
@@ -119,11 +117,7 @@ public class ShaderParametersCombine extends ShaderParametersBase {
             DefaultRenderingProcess.getInstance().bindFboTexture("sceneSkyBand1");
             program.setInt("texSceneSkyBand", texId++, true);
 
-            Vector4f skyInscatteringSettingsFrag = new Vector4f();
-            skyInscatteringSettingsFrag.y = skyInscatteringStrength;
-            skyInscatteringSettingsFrag.z = skyInscatteringLength;
-            skyInscatteringSettingsFrag.w = skyInscatteringThreshold;
-            program.setFloat4("skyInscatteringSettingsFrag", skyInscatteringSettingsFrag, true);
+            program.setFloat4("skyInscatteringSettingsFrag", 0, skyInscatteringStrength, skyInscatteringLength, skyInscatteringThreshold, true);
         }
     }
 }

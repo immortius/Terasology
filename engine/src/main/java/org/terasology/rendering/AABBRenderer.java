@@ -19,6 +19,7 @@ package org.terasology.rendering;
 import org.lwjgl.opengl.GL11;
 import org.terasology.registry.CoreRegistry;
 import org.terasology.math.AABB;
+import org.terasology.rendering.nui.Color;
 import org.terasology.rendering.world.WorldRenderer;
 
 import javax.vecmath.Vector3f;
@@ -52,7 +53,7 @@ import static org.lwjgl.opengl.GL11.glVertex3f;
 public class AABBRenderer implements BlockOverlayRenderer {
     private int displayListWire = -1;
     private int displayListSolid = -1;
-    private Vector4f solidColor = new Vector4f(1f, 1f, 1f, 1f);
+    private Color solidColor = Color.WHITE;
 
     private AABB aabb;
 
@@ -78,7 +79,7 @@ public class AABBRenderer implements BlockOverlayRenderer {
         }
     }
 
-    public void setSolidColor(Vector4f color) {
+    public void setSolidColor(Color color) {
         solidColor = color;
     }
 
@@ -151,7 +152,7 @@ public class AABBRenderer implements BlockOverlayRenderer {
 
         glNewList(displayListSolid, GL11.GL_COMPILE);
         glBegin(GL_QUADS);
-        glColor4f(solidColor.x, solidColor.y, solidColor.z, solidColor.w);
+        glColor4f(solidColor.rf(), solidColor.gf(), solidColor.bf(), solidColor.af());
 
         Vector3f dimensions = aabb.getExtents();
 

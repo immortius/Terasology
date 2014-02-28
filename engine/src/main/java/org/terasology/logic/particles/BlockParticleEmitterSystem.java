@@ -36,6 +36,7 @@ import org.terasology.registry.In;
 import org.terasology.rendering.assets.material.Material;
 import org.terasology.rendering.assets.texture.Texture;
 import org.terasology.rendering.logic.NearestSortingList;
+import org.terasology.rendering.nui.Color;
 import org.terasology.rendering.world.WorldRenderer;
 import org.terasology.utilities.random.FastRandom;
 import org.terasology.utilities.random.Random;
@@ -344,7 +345,7 @@ public class BlockParticleEmitterSystem extends BaseComponentSystem implements U
     protected void renderParticle(Particle particle, float light) {
         Material mat = Assets.getMaterial("engine:particle");
 
-        mat.setFloat4("colorOffset", particle.color.x, particle.color.y, particle.color.z, particle.color.w, true);
+        mat.setFloat4("colorOffset", particle.color.rf(), particle.color.gf(), particle.color.bf(), particle.color.af(), true);
         mat.setFloat2("texOffset", particle.texOffset.x, particle.texOffset.y, true);
         mat.setFloat2("texScale", particle.texSize.x, particle.texSize.y, true);
         mat.setFloat("light", light, true);
@@ -355,8 +356,9 @@ public class BlockParticleEmitterSystem extends BaseComponentSystem implements U
     protected void renderParticle(Particle particle, Block block, float temperature, float humidity, float light) {
         Material mat = Assets.getMaterial("engine:particle");
 
-        Vector4f colorMod = block.calcColorOffsetFor(BlockPart.FRONT, temperature, humidity);
-        mat.setFloat4("colorOffset", particle.color.x * colorMod.x, particle.color.y * colorMod.y, particle.color.z * colorMod.z, particle.color.w * colorMod.w, true);
+        Color colorMod = block.calcColorOffsetFor(BlockPart.FRONT, temperature, humidity);
+        Color finalColor = colorMod.filter(particle.color);
+        mat.setFloat4("colorOffset", finalColor.rf(), finalColor.gf(), finalColor.bf(), finalColor.af(), true);
 
         mat.setFloat2("texOffset", particle.texOffset.x, particle.texOffset.y, true);
         mat.setFloat2("texScale", particle.texSize.x, particle.texSize.y, true);

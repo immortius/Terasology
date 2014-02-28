@@ -19,11 +19,12 @@ package org.terasology.world.block.loader;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.terasology.engine.API;
+import org.terasology.math.geom.BaseVector4f;
+import org.terasology.math.geom.Vector4f;
 import org.terasology.world.block.Block;
 import org.terasology.world.block.BlockPart;
 
 import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
 import java.util.EnumMap;
 import java.util.List;
 
@@ -63,7 +64,7 @@ public class BlockDefinition {
     public Block.ColorSource colorSource = Block.ColorSource.DEFAULT;
     public ColorSources colorSources;
 
-    public Vector4f colorOffset = new Vector4f(1, 1, 1, 1);
+    public Vector4f colorOffset = new Vector4f(BaseVector4f.ONE);
     public ColorOffsets colorOffsets;
 
     public float mass = 10f;

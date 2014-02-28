@@ -25,8 +25,6 @@ import org.terasology.rendering.assets.material.Material;
 import org.terasology.rendering.assets.texture.Texture;
 import org.terasology.rendering.opengl.DefaultRenderingProcess;
 
-import javax.vecmath.Vector4f;
-
 import static org.lwjgl.opengl.GL11.glBindTexture;
 
 /**
@@ -127,20 +125,9 @@ public class ShaderParametersChunk extends ShaderParametersBase {
             }
         }
 
-        Vector4f lightingSettingsFrag = new Vector4f();
-        lightingSettingsFrag.z = waterSpecExp;
-        program.setFloat4("lightingSettingsFrag", lightingSettingsFrag, true);
-
-        Vector4f waterSettingsFrag = new Vector4f();
-        waterSettingsFrag.x = waterNormalBias;
-        waterSettingsFrag.y = waterRefraction;
-        waterSettingsFrag.z = waterFresnelBias;
-        waterSettingsFrag.w = waterFresnelPow;
-        program.setFloat4("waterSettingsFrag", waterSettingsFrag, true);
-
-        Vector4f alternativeWaterSettingsFrag = new Vector4f();
-        alternativeWaterSettingsFrag.x = waterTint;
-        program.setFloat4("alternativeWaterSettingsFrag", alternativeWaterSettingsFrag, true);
+        program.setFloat4("lightingSettingsFrag", 0, 0, waterSpecExp, 0, true);
+        program.setFloat4("waterSettingsFrag", waterNormalBias, waterRefraction, waterFresnelBias, waterFresnelPow, true);
+        program.setFloat4("alternativeWaterSettingsFrag", waterTint, 0, 0, 0, true);
 
         if (CoreRegistry.get(Config.class).getRendering().isAnimateWater()) {
             program.setFloat("waveIntensFalloff", waveIntensFalloff, true);

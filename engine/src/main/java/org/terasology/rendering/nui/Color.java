@@ -18,9 +18,10 @@ package org.terasology.rendering.nui;
 import com.google.common.base.Preconditions;
 import org.terasology.engine.API;
 import org.terasology.math.Vector3i;
+import org.terasology.math.geom.BaseVector4f;
+import org.terasology.math.geom.Vector4f;
 
 import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.Objects;
@@ -29,7 +30,7 @@ import java.util.Objects;
  * Color is a representation of a RGBA color. Color components can be set and accessed via floats ranging from 0-1, or ints ranging from 0-255.
  * Color is immutable and thread safe.
  * <p/>
- * There are a plethora of Color classes, but none that are quite suitable IMO:
+ * There are a plethora of other Color classes, but none that are quite suitable IMO:
  * <ul>
  * <li>vecmaths - doesn't access with r/g/b/a, separation by representation is awkward, feature bland.</li>
  * <li>Slick2D - ideally will lose dependency on slick utils. Also ties to lwjgl</li>
@@ -73,7 +74,12 @@ public class Color {
         representation = 0x000000FF;
     }
 
-    public Color(int representation) {
+    /**
+     * Creates a color from an integer representation, of the form RGBA
+     *
+     * @param representation
+     */
+    private Color(int representation) {
         this.representation = representation;
     }
 
@@ -125,6 +131,18 @@ public class Color {
         Preconditions.checkArgument(b >= 0 && b <= MAX, "Color values must be in range 0-255");
         Preconditions.checkArgument(a >= 0 && a <= MAX, "Color values must be in range 0-255");
         representation = r << RED_OFFSET | g << GREEN_OFFSET | b << BLUE_OFFSET | a;
+    }
+
+    public static Color fromARGB(int argb) {
+        return new Color(((argb & 0xffffff) << BLUE_OFFSET) | ((argb >> 24) & 0xff));
+    }
+
+    public static Color fromRGBA(int rgba) {
+        return new Color(rgba);
+    }
+
+    public static Color fromRGB(int rgb) {
+        return new Color((rgb << BLUE_OFFSET) | 0xff);
     }
 
     /**
@@ -191,16 +209,64 @@ public class Color {
         return new Color(value | (representation & ALPHA_FILTER));
     }
 
+    public Color filter(Color other) {
+        return new Color(rf() * other.rf(), gf() * other.gf(), bf() * other.bf(), af() * other.af());
+    }
+
+    public Color filter(Vector4f other) {
+        return new Color(rf() * other.x(), gf() * other.y(), bf() * other.z(), af() * other.w());
+    }
+
     public Color inverse() {
         return new Color((~representation & ALPHA_FILTER) | a());
     }
 
-    public int rgba() {
+    public int toRGBA() {
         return representation;
     }
 
-    public Vector4f toVector4f() {
-        return new Vector4f(rf(), gf(), bf(), af());
+    public BaseVector4f toVector4f() {
+        return new BaseVector4f() {
+            @Override
+            public float getX() {
+                return x();
+            }
+
+            @Override
+            public float getY() {
+                return y();
+            }
+
+            @Override
+            public float getZ() {
+                return z();
+            }
+
+            @Override
+            public float getW() {
+                return w();
+            }
+
+            @Override
+            public float x() {
+                return rf();
+            }
+
+            @Override
+            public float y() {
+                return gf();
+            }
+
+            @Override
+            public float z() {
+                return bf();
+            }
+
+            @Override
+            public float w() {
+                return af();
+            }
+        };
     }
 
     public Vector3f toVector3f() {
@@ -211,7 +277,7 @@ public class Color {
         return new Vector3i(r(), g(), b());
     }
 
-    public void addToBuffer(ByteBuffer buffer) {
+    public void addRGBAToBuffer(ByteBuffer buffer) {
         buffer.putInt(representation);
     }
 
@@ -242,28 +308,8 @@ public class Color {
         return builder.toString();
     }
 
-    /**
-     * @param color
-     * @return Slick.Color format representation used in old GUI colorStrings.
-     * Remove after Slick.Color is removed or after colorString format changes.
-     */
-    // TODO: Remove
-    public static String toColorString(Color color) {
-        String hex = color.toHex();
-        String rString = hex.substring(0, 2);
-        String gString = hex.substring(2, 4);
-        String bString = hex.substring(4, 6);
-        String aString = hex.substring(6);
-        return "#" + aString + rString + gString + bString;
-    }
-
-
     @Override
     public String toString() {
         return toHex();
-    }
-
-    public int getRepresentation() {
-        return representation;
     }
 }

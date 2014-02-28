@@ -29,9 +29,11 @@ import org.terasology.math.AABB;
 import org.terasology.math.Side;
 import org.terasology.math.TeraMath;
 import org.terasology.math.Vector3i;
+import org.terasology.math.geom.Vector4f;
 import org.terasology.rendering.assets.material.Material;
 import org.terasology.rendering.assets.mesh.Mesh;
 import org.terasology.rendering.assets.shader.ShaderProgramFeature;
+import org.terasology.rendering.nui.Color;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.utilities.collection.EnumBooleanMap;
 import org.terasology.world.block.family.BlockFamily;
@@ -42,8 +44,6 @@ import javax.imageio.ImageIO;
 import javax.vecmath.Matrix4f;
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Map;
@@ -67,32 +67,30 @@ public final class Block {
     public static enum ColorSource {
         DEFAULT {
             @Override
-            public Vector4f calcColor(float temperature, float humidity) {
-                return new Vector4f(1, 1, 1, 1);
+            public Color calcColor(float temperature, float humidity) {
+                return Color.WHITE;
             }
         },
         COLOR_LUT {
             @Override
-            public Vector4f calcColor(float temperature, float humidity) {
+            public Color calcColor(float temperature, float humidity) {
                 float prod = temperature * humidity;
                 int rgbValue = colorLut.getRGB((int) ((1.0 - temperature) * 255.0), (int) ((1.0 - prod) * 255.0));
 
-                Color c = new Color(rgbValue);
-                return new Vector4f(c.getRed() / 255f, c.getGreen() / 255f, c.getBlue() / 255f, 1.0f);
+                return Color.fromRGB(rgbValue);
             }
         },
         FOLIAGE_LUT {
             @Override
-            public Vector4f calcColor(float temperature, float humidity) {
+            public Color calcColor(float temperature, float humidity) {
                 float prod = humidity * temperature;
                 int rgbValue = foliageLut.getRGB((int) ((1.0 - temperature) * 255.0), (int) ((1.0 - prod) * 255.0));
 
-                Color c = new Color(rgbValue);
-                return new Vector4f(c.getRed() / 255f, c.getGreen() / 255f, c.getBlue() / 255f, 1.0f);
+                return Color.fromRGB(rgbValue);
             }
         };
 
-        public abstract Vector4f calcColor(float temperature, float humidity);
+        public abstract Color calcColor(float temperature, float humidity);
     }
 
     /* LUTs */
@@ -188,7 +186,7 @@ public final class Block {
     public Block() {
         for (BlockPart part : BlockPart.values()) {
             colorSource.put(part, ColorSource.DEFAULT);
-            colorOffsets.put(part, new Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+            colorOffsets.put(part, new Vector4f(Vector4f.ONE));
         }
     }
 
@@ -586,17 +584,12 @@ public final class Block {
      * @param humidity    The humidity
      * @return The color offset
      */
-    public Vector4f calcColorOffsetFor(BlockPart part, float temperature, float humidity) {
+    public Color calcColorOffsetFor(BlockPart part, float temperature, float humidity) {
         ColorSource source = getColorSource(part);
-        Vector4f color = source.calcColor(temperature, humidity);
-
+        Color color = source.calcColor(temperature, humidity);
         Vector4f colorOffset = colorOffsets.get(part);
-        color.x *= colorOffset.x;
-        color.y *= colorOffset.y;
-        color.z *= colorOffset.z;
-        color.w *= colorOffset.w;
 
-        return color;
+        return color.filter(colorOffset);
     }
 
     public void setCollision(Vector3f offset, CollisionShape shape) {

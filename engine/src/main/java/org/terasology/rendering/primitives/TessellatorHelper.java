@@ -16,10 +16,11 @@
 package org.terasology.rendering.primitives;
 
 import org.terasology.engine.API;
+import org.terasology.math.geom.Vector4f;
+import org.terasology.rendering.nui.Color;
 
 import javax.vecmath.Vector2f;
 import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
 
 @API
 public final class TessellatorHelper {
@@ -27,13 +28,13 @@ public final class TessellatorHelper {
     private TessellatorHelper() {
     }
 
-    public static void addBlockMesh(Tessellator tessellator, Vector4f color, float size, float light1, float light2, float posX, float posY, float posZ) {
+    public static void addBlockMesh(Tessellator tessellator, Color color, float size, float light1, float light2, float posX, float posY, float posZ) {
         Vector2f defaultSize = new Vector2f(1.0f, 1.0f);
         Vector2f defaultOffset = new Vector2f(0.0f, 0.0f);
         addBlockMesh(tessellator, color, defaultOffset, defaultSize, size, light1, light2, posX, posY, posZ);
     }
 
-    public static void addBlockMesh(Tessellator tessellator, Vector4f color, Vector2f texOffset, Vector2f texSize,
+    public static void addBlockMesh(Tessellator tessellator, Color color, Vector2f texOffset, Vector2f texSize,
                                     float size, float light1, float light2, float posX, float posY, float posZ) {
         Vector2f[] sizes = new Vector2f[6];
         Vector2f[] offsets = new Vector2f[6];
@@ -46,12 +47,12 @@ public final class TessellatorHelper {
         addBlockMesh(tessellator, color, offsets, sizes, size, light1, light2, posX, posY, posZ);
     }
 
-    public static void addBlockMesh(Tessellator tessellator, Vector4f color, Vector2f[] texOffsets, Vector2f[] texSizes,
+    public static void addBlockMesh(Tessellator tessellator, Color color, Vector2f[] texOffsets, Vector2f[] texSizes,
                                     float size, float light1, float light2, float posX, float posY, float posZ) {
         final float sizeHalf = size / 2;
 
         tessellator.resetParams();
-        tessellator.setColor(new Vector4f(light1 * color.x, light1 * color.y, light1 * color.z, color.w));
+        tessellator.setColor(new Vector4f(light1 * color.rf(), light1 * color.gf(), light1 * color.bf(), color.af()));
 
         tessellator.setNormal(new Vector3f(0, 1, 0));
         tessellator.addPoly(
@@ -99,7 +100,7 @@ public final class TessellatorHelper {
                 });
 
 
-        tessellator.setColor(new Vector4f(light2 * color.x, light2 * color.y, light2 * color.z, color.w));
+        tessellator.setColor(new Vector4f(light2 * color.rf(), light2 * color.gf(), light2 * color.bf(), color.af()));
 
         tessellator.setNormal(new Vector3f(0, 0, -1));
         tessellator.addPoly(
@@ -146,29 +147,4 @@ public final class TessellatorHelper {
                         new Vector2f(texOffsets[5].x, texOffsets[5].y + texSizes[5].y)
                 });
     }
-
-    public static void addGUIQuadMesh(Tessellator tessellator, Vector4f color, float sizeX, float sizeY) {
-        tessellator.resetParams();
-        tessellator.setColor(new Vector4f(color.x, color.y, color.z, color.w));
-        tessellator.setUseLighting(false);
-        tessellator.setUseNormals(false);
-
-        tessellator.addPoly(
-                new Vector3f[]{
-                        new Vector3f(0, 0, 0),
-                        new Vector3f(sizeX, 0, 0),
-                        new Vector3f(sizeX, sizeY, 0),
-                        new Vector3f(0, sizeY, 0)
-                },
-                new Vector2f[]{
-                        new Vector2f(0, 0),
-                        new Vector2f(1, 0),
-                        new Vector2f(1, 1),
-                        new Vector2f(0, 1)
-                }
-        );
-        tessellator.setUseLighting(true);
-        tessellator.setUseNormals(true);
-    }
-
 }

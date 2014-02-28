@@ -16,13 +16,13 @@
 package org.terasology.world.block.shapes;
 
 import com.bulletphysics.linearmath.QuaternionUtil;
+import org.terasology.rendering.nui.Color;
 import org.terasology.rendering.primitives.ChunkMesh;
 import org.terasology.rendering.primitives.ChunkVertexFlag;
 
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector2f;
 import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
 import java.util.Arrays;
 
 /**
@@ -80,7 +80,7 @@ public class BlockMeshPart {
         return new BlockMeshPart(vertices, normals, newTexCoords, indices);
     }
 
-    public void appendTo(ChunkMesh chunk, int offsetX, int offsetY, int offsetZ, Vector4f colorOffset, ChunkMesh.RenderType renderType, ChunkVertexFlag flags) {
+    public void appendTo(ChunkMesh chunk, int offsetX, int offsetY, int offsetZ, Color colorOffset, ChunkMesh.RenderType renderType, ChunkVertexFlag flags) {
         ChunkMesh.VertexElements elements = chunk.getVertexElements(renderType);
         for (Vector2f texCoord : texCoords) {
             elements.tex.add(texCoord.x);
@@ -89,10 +89,10 @@ public class BlockMeshPart {
 
         int nextIndex = elements.vertexCount;
         for (int vIdx = 0; vIdx < vertices.length; ++vIdx) {
-            elements.color.add(colorOffset.x);
-            elements.color.add(colorOffset.y);
-            elements.color.add(colorOffset.z);
-            elements.color.add(colorOffset.w);
+            elements.color.add(colorOffset.rf());
+            elements.color.add(colorOffset.gf());
+            elements.color.add(colorOffset.bf());
+            elements.color.add(colorOffset.af());
             elements.vertices.add(vertices[vIdx].x + offsetX);
             elements.vertices.add(vertices[vIdx].y + offsetY);
             elements.vertices.add(vertices[vIdx].z + offsetZ);

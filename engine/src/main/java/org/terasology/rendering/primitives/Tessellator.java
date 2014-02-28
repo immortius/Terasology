@@ -20,13 +20,14 @@ import org.terasology.asset.AssetType;
 import org.terasology.asset.AssetUri;
 import org.terasology.asset.Assets;
 import org.terasology.engine.API;
+import org.terasology.math.geom.BaseVector4f;
+import org.terasology.math.geom.Vector4f;
 import org.terasology.rendering.assets.mesh.Mesh;
 import org.terasology.rendering.assets.mesh.MeshData;
 import org.terasology.world.block.shapes.BlockMeshPart;
 
 import javax.vecmath.Vector2f;
 import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
 
 @API
 public class Tessellator {
@@ -35,7 +36,7 @@ public class Tessellator {
 
     private int nextIndex;
 
-    private Vector4f activeColor = new Vector4f();
+    private Vector4f activeColor = new Vector4f(1, 1, 1, 1);
     private Vector3f activeNormal = new Vector3f();
     private Vector2f activeTex = new Vector2f();
     private Vector3f lighting = new Vector3f();
@@ -73,10 +74,10 @@ public class Tessellator {
             meshData.getVertices().add(vertices[i].y);
             meshData.getVertices().add(vertices[i].z);
 
-            meshData.getColors().add(activeColor.x);
-            meshData.getColors().add(activeColor.y);
-            meshData.getColors().add(activeColor.z);
-            meshData.getColors().add(activeColor.w);
+            meshData.getColors().add(activeColor.x());
+            meshData.getColors().add(activeColor.y());
+            meshData.getColors().add(activeColor.z());
+            meshData.getColors().add(activeColor.w());
 
             if (useNormals) {
                 meshData.getNormals().add(activeNormal.x);
@@ -118,10 +119,10 @@ public class Tessellator {
             meshData.getVertices().add(vertex.y);
             meshData.getVertices().add(vertex.z);
 
-            meshData.getColors().add(activeColor.x);
-            meshData.getColors().add(activeColor.y);
-            meshData.getColors().add(activeColor.z);
-            meshData.getColors().add(activeColor.w);
+            meshData.getColors().add(activeColor.x());
+            meshData.getColors().add(activeColor.y());
+            meshData.getColors().add(activeColor.z());
+            meshData.getColors().add(activeColor.w());
 
             Vector3f normal = part.getNormal(i);
             meshData.getNormals().add(normal.x);
@@ -154,7 +155,7 @@ public class Tessellator {
         nextIndex += part.size();
     }
 
-    public void setColor(Vector4f v) {
+    public void setColor(BaseVector4f v) {
         activeColor.set(v);
     }
 

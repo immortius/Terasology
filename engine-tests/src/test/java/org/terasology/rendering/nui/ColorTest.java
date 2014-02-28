@@ -30,6 +30,24 @@ public class ColorTest {
     }
 
     @Test
+    public void argbToColor() {
+        Color c = Color.fromARGB(0xaabbccdd);
+        assertEquals(0xaa, c.a());
+        assertEquals(0xbb, c.r());
+        assertEquals(0xcc, c.g());
+        assertEquals(0xdd, c.b());
+    }
+
+    @Test
+    public void rgbToColor() {
+        Color c = Color.fromRGB(0xaabbcc);
+        assertEquals(0xff, c.a());
+        assertEquals(0xaa, c.r());
+        assertEquals(0xbb, c.g());
+        assertEquals(0xcc, c.b());
+    }
+
+    @Test
     public void getSetRed() {
         Color color = new Color(1, 10, 60, 255);
         assertEquals(1, color.r());

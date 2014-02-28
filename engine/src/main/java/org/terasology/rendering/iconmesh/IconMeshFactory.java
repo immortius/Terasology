@@ -23,10 +23,10 @@ import org.terasology.engine.API;
 import org.terasology.math.Rect2i;
 import org.terasology.rendering.assets.mesh.Mesh;
 import org.terasology.rendering.assets.texture.TextureRegion;
+import org.terasology.rendering.nui.Color;
 import org.terasology.rendering.primitives.Tessellator;
 import org.terasology.rendering.primitives.TessellatorHelper;
 
-import javax.vecmath.Vector4f;
 import java.nio.ByteBuffer;
 
 @API
@@ -52,7 +52,7 @@ public final class IconMeshFactory {
         return generateIconMesh(uri, tex, 0, false, null);
     }
 
-    public static Mesh generateIconMesh(AssetUri uri, TextureRegion tex, int alphaLimit, boolean withContour, Vector4f colorContour) {
+    public static Mesh generateIconMesh(AssetUri uri, TextureRegion tex, int alphaLimit, boolean withContour, Color colorContour) {
         ByteBuffer buffer = tex.getTexture().getData().getBuffers()[0];
 
         Rect2i pixelRegion = tex.getPixelRegion();
@@ -73,7 +73,7 @@ public final class IconMeshFactory {
                 int a = buffer.get((posY + y) * stride + (posX + x) * 4 + 3) & 255;
 
                 if (a > alphaLimit) {
-                    Vector4f color = new Vector4f(r / 255f, g / 255f, b / 255f, a / 255f);
+                    Color color = new Color(r, g, b, a);
                     TessellatorHelper.addBlockMesh(tessellator, color, 2f / textureSize, 1.0f, 0.5f, 2f / textureSize * x - 0.5f, 2f / textureSize * (15 - y) - 1f, 0f);
 
                     if (withContour) {
@@ -119,8 +119,7 @@ public final class IconMeshFactory {
                             }
 
                             if (newA < alphaLimit) {
-                                Vector4f cColor = new Vector4f(colorContour.x / 255f, colorContour.y / 255f, colorContour.z / 255f, colorContour.w);
-                                TessellatorHelper.addBlockMesh(tessellator, cColor, 0.125f, 1.0f, 0.5f, 2f * 0.0625f * newX - 0.5f, 0.125f * (15 - newY) - 1f, 0f);
+                                TessellatorHelper.addBlockMesh(tessellator, colorContour, 0.125f, 1.0f, 0.5f, 2f * 0.0625f * newX - 0.5f, 0.125f * (15 - newY) - 1f, 0f);
                             }
                         }
                     }

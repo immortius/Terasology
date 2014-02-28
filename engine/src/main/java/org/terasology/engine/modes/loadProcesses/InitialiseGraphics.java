@@ -20,6 +20,7 @@ import org.terasology.asset.AssetUri;
 import org.terasology.engine.TerasologyConstants;
 import org.terasology.registry.CoreRegistry;
 import org.terasology.rendering.ShaderManager;
+import org.terasology.rendering.nui.Color;
 import org.terasology.rendering.nui.NUIManager;
 import org.terasology.rendering.nui.internal.NUIManagerInternal;
 import org.terasology.rendering.primitives.Tessellator;
@@ -46,8 +47,8 @@ public class InitialiseGraphics extends SingleStepLoadProcess {
         // TODO: This should be elsewhere
         // Create gelatinousCubeMesh
         Tessellator tessellator = new Tessellator();
-        TessellatorHelper.addBlockMesh(tessellator, new Vector4f(1.0f, 1.0f, 1.0f, 1.0f), 0.8f, 0.8f, 0.6f, 0f, 0f, 0f);
-        TessellatorHelper.addBlockMesh(tessellator, new Vector4f(1.0f, 1.0f, 1.0f, 0.6f), 1.0f, 1.0f, 0.8f, 0f, 0f, 0f);
+        TessellatorHelper.addBlockMesh(tessellator, Color.WHITE, 0.8f, 0.8f, 0.6f, 0f, 0f, 0f);
+        TessellatorHelper.addBlockMesh(tessellator, new Color(1.0f, 1.0f, 1.0f, 0.6f), 1.0f, 1.0f, 0.8f, 0f, 0f, 0f);
         tessellator.generateMesh(new AssetUri(AssetType.MESH, TerasologyConstants.ENGINE_MODULE, "gelatinousCube"));
         return true;
     }

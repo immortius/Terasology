@@ -15,6 +15,23 @@
  */
 package org.terasology.rendering.world.selection;
 
+import org.lwjgl.opengl.GL11;
+import org.terasology.asset.Assets;
+import org.terasology.engine.API;
+import org.terasology.math.Vector3i;
+import org.terasology.registry.CoreRegistry;
+import org.terasology.rendering.assets.material.Material;
+import org.terasology.rendering.assets.mesh.Mesh;
+import org.terasology.rendering.assets.shader.ShaderProgramFeature;
+import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.nui.Color;
+import org.terasology.rendering.primitives.Tessellator;
+import org.terasology.rendering.primitives.TessellatorHelper;
+import org.terasology.rendering.world.WorldRenderer;
+
+import javax.vecmath.Vector2f;
+import javax.vecmath.Vector3f;
+
 import static org.lwjgl.opengl.GL11.GL_MODELVIEW;
 import static org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA;
 import static org.lwjgl.opengl.GL11.GL_SRC_ALPHA;
@@ -27,23 +44,6 @@ import static org.lwjgl.opengl.GL11.glPopMatrix;
 import static org.lwjgl.opengl.GL11.glPushMatrix;
 import static org.lwjgl.opengl.GL11.glTranslated;
 
-import javax.vecmath.Vector2f;
-import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
-
-import org.lwjgl.opengl.GL11;
-import org.terasology.asset.Assets;
-import org.terasology.engine.API;
-import org.terasology.registry.CoreRegistry;
-import org.terasology.math.Vector3i;
-import org.terasology.rendering.assets.material.Material;
-import org.terasology.rendering.assets.mesh.Mesh;
-import org.terasology.rendering.assets.shader.ShaderProgramFeature;
-import org.terasology.rendering.assets.texture.Texture;
-import org.terasology.rendering.primitives.Tessellator;
-import org.terasology.rendering.primitives.TessellatorHelper;
-import org.terasology.rendering.world.WorldRenderer;
-
 /**
  * Renders a selection. Is used by the BlockSelectionSystem.
  * <p/>
@@ -53,10 +53,14 @@ import org.terasology.rendering.world.WorldRenderer;
  */
 @API
 public class BlockSelectionRenderer {
+
+    private static final Color TRANSLUCENT_COLOR = new Color(1, 1, 1, 0.2f);
+
     private Mesh overlayMesh;
     private Mesh overlayMesh2;
     private Texture effectsTexture;
     private Material defaultTextured;
+
 
     public BlockSelectionRenderer(Texture effectsTexture) {
         this.effectsTexture = effectsTexture;
@@ -67,10 +71,10 @@ public class BlockSelectionRenderer {
     private void initialize(Vector2f effectsTextureWidth) {
         Vector2f texPos = new Vector2f(0.0f, 0.0f);
         Tessellator tessellator = new Tessellator();
-        TessellatorHelper.addBlockMesh(tessellator, new Vector4f(1, 1, 1, 1f), texPos, effectsTextureWidth, 1.001f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f);
+        TessellatorHelper.addBlockMesh(tessellator, Color.WHITE, texPos, effectsTextureWidth, 1.001f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f);
         overlayMesh = tessellator.generateMesh();
         tessellator = new Tessellator();
-        TessellatorHelper.addBlockMesh(tessellator, new Vector4f(1, 1, 1, .2f), texPos, effectsTextureWidth, 1.001f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f);
+        TessellatorHelper.addBlockMesh(tessellator, TRANSLUCENT_COLOR, texPos, effectsTextureWidth, 1.001f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f);
         overlayMesh2 = tessellator.generateMesh();
         defaultTextured = Assets.getMaterial("engine:defaultTextured");
     }

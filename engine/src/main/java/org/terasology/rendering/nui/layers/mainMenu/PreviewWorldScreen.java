@@ -165,7 +165,7 @@ public class PreviewWorldScreen extends CoreScreenLayer {
                 int px = (x + offX) * scale;
                 int py = (y + offY) * scale;
                 Color c = previewGenerator.get(layerName, px, py);
-                c.addToBuffer(buf);
+                c.addRGBAToBuffer(buf);
             }
         }
         buf.flip();

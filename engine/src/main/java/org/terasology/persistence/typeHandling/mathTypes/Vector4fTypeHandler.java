@@ -17,13 +17,13 @@ package org.terasology.persistence.typeHandling.mathTypes;
 
 
 import gnu.trove.list.TFloatList;
+import org.terasology.math.geom.Vector4f;
 import org.terasology.persistence.typeHandling.DeserializationContext;
 import org.terasology.persistence.typeHandling.PersistedData;
 import org.terasology.persistence.typeHandling.PersistedDataArray;
 import org.terasology.persistence.typeHandling.SerializationContext;
 import org.terasology.persistence.typeHandling.SimpleTypeHandler;
 
-import javax.vecmath.Vector4f;
 
 /**
  * @author Immortius
@@ -32,7 +32,7 @@ public class Vector4fTypeHandler extends SimpleTypeHandler<Vector4f> {
 
     @Override
     public PersistedData serialize(Vector4f value, SerializationContext context) {
-        return context.create(value.x, value.y, value.z, value.w);
+        return context.create(value.x(), value.y(), value.z(), value.w());
     }
 
     @Override

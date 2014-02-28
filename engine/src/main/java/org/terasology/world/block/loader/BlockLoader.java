@@ -33,14 +33,18 @@ import org.terasology.asset.AssetManager;
 import org.terasology.asset.AssetType;
 import org.terasology.asset.AssetUri;
 import org.terasology.asset.Assets;
+import org.terasology.math.geom.Vector4f;
+import org.terasology.persistence.typeHandling.extensionTypes.ColorTypeHandler;
+import org.terasology.persistence.typeHandling.gson.JsonTypeHandlerAdapter;
+import org.terasology.persistence.typeHandling.mathTypes.Vector4fTypeHandler;
 import org.terasology.registry.CoreRegistry;
 import org.terasology.math.Rotation;
 import org.terasology.math.Side;
 import org.terasology.persistence.ModuleContext;
+import org.terasology.rendering.nui.Color;
 import org.terasology.utilities.gson.CaseInsensitiveEnumTypeAdapterFactory;
 import org.terasology.utilities.gson.JsonMergeUtil;
 import org.terasology.utilities.gson.Vector3fTypeAdapter;
-import org.terasology.utilities.gson.Vector4fTypeAdapter;
 import org.terasology.world.block.Block;
 import org.terasology.world.block.BlockAppearance;
 import org.terasology.world.block.BlockPart;
@@ -56,7 +60,6 @@ import org.terasology.world.block.shapes.BlockShape;
 
 import javax.vecmath.Vector2f;
 import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -94,11 +97,12 @@ public class BlockLoader implements BlockBuilderHelper {
         parser = new JsonParser();
         gson = new GsonBuilder()
                 .registerTypeAdapterFactory(new CaseInsensitiveEnumTypeAdapterFactory())
+                .registerTypeAdapter(Color.class, new JsonTypeHandlerAdapter<>(new ColorTypeHandler()))
+                .registerTypeAdapter(Vector4f.class, new JsonTypeHandlerAdapter<>(new Vector4fTypeHandler()))
                 .registerTypeAdapter(BlockDefinition.Tiles.class, new BlockTilesDefinitionHandler())
                 .registerTypeAdapter(BlockDefinition.ColorSources.class, new BlockColorSourceDefinitionHandler())
                 .registerTypeAdapter(BlockDefinition.ColorOffsets.class, new BlockColorOffsetDefinitionHandler())
                 .registerTypeAdapter(Vector3f.class, new Vector3fTypeAdapter())
-                .registerTypeAdapter(Vector4f.class, new Vector4fTypeAdapter())
                 .create();
         cubeShape = (BlockShape) Assets.get(AssetType.SHAPE, "engine:cube");
         loweredShape = (BlockShape) Assets.get(AssetType.SHAPE, "engine:loweredCube");

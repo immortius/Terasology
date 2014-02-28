@@ -27,6 +27,7 @@ import org.terasology.math.TeraMath;
 import org.terasology.math.Vector3i;
 import org.terasology.monitoring.PerformanceMonitor;
 import org.terasology.rendering.RenderMath;
+import org.terasology.rendering.nui.Color;
 import org.terasology.world.ChunkView;
 import org.terasology.world.MiniatureChunk;
 import org.terasology.world.WorldProvider;
@@ -333,7 +334,7 @@ public final class ChunkTessellator {
         }
 
         if (blockAppearance.getPart(BlockPart.CENTER) != null) {
-            Vector4f colorOffset = block.calcColorOffsetFor(BlockPart.CENTER, temp, hum);
+            Color colorOffset = block.calcColorOffsetFor(BlockPart.CENTER, temp, hum);
             blockAppearance.getPart(BlockPart.CENTER).appendTo(mesh, x, y, z, colorOffset, renderType, vertexFlag);
         }
 
@@ -369,7 +370,7 @@ public final class ChunkTessellator {
             if (bottomBlock.isLiquid() || bottomBlock.isInvisible()) {
                 for (Side dir : Side.values()) {
                     if (drawDir[dir.ordinal()]) {
-                        Vector4f colorOffset = block.calcColorOffsetFor(BlockPart.fromSide(dir), temp, hum);
+                        Color colorOffset = block.calcColorOffsetFor(BlockPart.fromSide(dir), temp, hum);
                         block.getLoweredLiquidMesh(dir).appendTo(mesh, x, y, z, colorOffset, renderType, vertexFlag);
                     }
                 }
@@ -379,7 +380,7 @@ public final class ChunkTessellator {
 
         for (Side dir : Side.values()) {
             if (drawDir[dir.ordinal()]) {
-                Vector4f colorOffset = block.calcColorOffsetFor(BlockPart.fromSide(dir), temp, hum);
+                Color colorOffset = block.calcColorOffsetFor(BlockPart.fromSide(dir), temp, hum);
                 // TODO: Needs review since the new per-vertex flags introduce a lot of special scenarios - probably a per-side setting?
                 if (block.isGrass() && dir != Side.TOP && dir != Side.BOTTOM) {
                     blockAppearance.getPart(BlockPart.fromSide(dir)).appendTo(mesh, x, y, z, colorOffset, renderType, ChunkVertexFlag.COLOR_MASK);

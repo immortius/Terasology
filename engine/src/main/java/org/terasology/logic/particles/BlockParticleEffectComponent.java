@@ -19,6 +19,7 @@ import com.google.common.collect.Lists;
 import org.terasology.reflection.MappedContainer;
 import org.terasology.entitySystem.Component;
 import org.terasology.rendering.assets.texture.Texture;
+import org.terasology.rendering.nui.Color;
 import org.terasology.world.block.family.BlockFamily;
 
 import javax.vecmath.Vector2f;
@@ -44,7 +45,7 @@ public final class BlockParticleEffectComponent implements Component {
 
     public int spawnCount = 16;
     public boolean destroyEntityOnCompletion;
-    public Vector4f color = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
+    public Color color = Color.WHITE;
     public ParticleBlendMode blendMode = ParticleBlendMode.OPAQUE;
 
     // Initial conditions
@@ -73,9 +74,9 @@ public final class BlockParticleEffectComponent implements Component {
         public float lifeRemaining = 1.0f;
         public Vector2f texOffset = new Vector2f(0, 0);
         public Vector2f texSize = new Vector2f(1, 1);
-        public Vector4f color = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
+        public Color color = Color.WHITE;
 
-        public Particle clone() {
+        public Particle copy() {
             Particle particle = new Particle();
             particle.velocity.set(velocity);
             particle.position.set(position);
