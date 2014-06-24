@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.world.generation.perlin;
+package org.terasology.core.world.generator.perlinFacetProviders;
 
 import org.terasology.math.Rect2i;
 import org.terasology.math.Region3i;
@@ -27,7 +27,7 @@ import org.terasology.world.generation.facets.DensityFacet;
 import org.terasology.world.generation.facets.SurfaceHeightFacet;
 
 /**
- * @author Immortius
+ * Sets density based on its distance from the surface
  */
 @Requires(@Facet(SurfaceHeightFacet.class))
 @Produces(DensityFacet.class)

@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.world.generation.perlin;
+package org.terasology.core.world.generator.perlinFacetProviders;
 
-import org.terasology.math.Rect2i;
-import org.terasology.math.Region3i;
 import org.terasology.math.TeraMath;
 import org.terasology.utilities.procedural.BrownianNoise3D;
 import org.terasology.utilities.procedural.Noise3DTo2DAdapter;
@@ -25,35 +23,33 @@ import org.terasology.utilities.procedural.SubSampledNoise2D;
 import org.terasology.world.generation.Facet;
 import org.terasology.world.generation.FacetProvider;
 import org.terasology.world.generation.GeneratingRegion;
-import org.terasology.world.generation.Produces;
-import org.terasology.world.generation.Requires;
 import org.terasology.world.generation.Updates;
 import org.terasology.world.generation.facets.SurfaceHeightFacet;
 
 import javax.vecmath.Vector2f;
 
 /**
- * @author Immortius
+ * Scales the surface height closer to 0 for regions that are rivers
  */
 @Updates(@Facet(SurfaceHeightFacet.class))
-public class PerlinOceanProvider implements FacetProvider {
+public class PerlinRiverProvider implements FacetProvider {
     private static final int SAMPLE_RATE = 4;
 
-    private SubSampledNoise2D oceanNoise;
+    private SubSampledNoise2D riverNoise;
 
     @Override
     public void setSeed(long seed) {
-        oceanNoise = new SubSampledNoise2D(new Noise3DTo2DAdapter(new BrownianNoise3D(new PerlinNoise(seed + 1), 8)), new Vector2f(0.0009f, 0.0009f), SAMPLE_RATE);
+        riverNoise = new SubSampledNoise2D(new Noise3DTo2DAdapter(new BrownianNoise3D(new PerlinNoise(seed + 2), 8)), new Vector2f(0.0008f, 0.0008f), SAMPLE_RATE);
     }
 
     @Override
     public void process(GeneratingRegion region) {
         SurfaceHeightFacet facet = region.getRegionFacet(SurfaceHeightFacet.class);
-        float[] noise = oceanNoise.noise(facet.getWorldRegion());
+        float[] noise = riverNoise.noise(facet.getWorldRegion());
 
         float[] surfaceHeights = facet.getInternal();
         for (int i = 0; i < noise.length; ++i) {
-            surfaceHeights[i] *= TeraMath.clamp(noise[i] * 8.0f + 0.25f);
+            surfaceHeights[i] *= TeraMath.clamp(7f * (TeraMath.sqrt(Math.abs(noise[i])) - 0.1f) + 0.25f);
         }
     }
 }

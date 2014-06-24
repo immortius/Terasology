@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.world.generation.perlin;
+package org.terasology.core.world.generator.perlinFacetProviders;
 
 import org.terasology.math.TeraMath;
 import org.terasology.math.Vector2i;
@@ -34,7 +34,7 @@ import javax.vecmath.Vector2f;
 import java.util.Iterator;
 
 /**
- * @author Immortius
+ * Adds surface height for hill and mountain regions. Mountain and hill regions are based off of temperature and humidity.
  */
 @Requires({@Facet(SeaLevelTemperatureFacet.class), @Facet(HumidityFacet.class)})
 @Updates(@Facet(SurfaceHeightFacet.class))
