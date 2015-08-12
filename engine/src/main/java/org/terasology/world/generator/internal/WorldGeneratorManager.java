@@ -42,17 +42,16 @@ import java.util.List;
 public class WorldGeneratorManager {
     private static final Logger logger = LoggerFactory.getLogger(WorldGeneratorManager.class);
 
-    private Context context;
+    private ModuleManager moduleManager;
 
     private ImmutableList<WorldGeneratorInfo> generatorInfo;
 
-    public WorldGeneratorManager(Context context) {
-        this.context = context;
+    public WorldGeneratorManager(ModuleManager moduleManager) {
+        this.moduleManager = moduleManager;
         refresh();
     }
 
     public void refresh() {
-        ModuleManager moduleManager = context.get(ModuleManager.class);
         List<WorldGeneratorInfo> infos = Lists.newArrayList();
         for (Name moduleId : moduleManager.getRegistry().getModuleIds()) {
             Module module = moduleManager.getRegistry().getLatestModuleVersion(moduleId);
@@ -60,7 +59,7 @@ public class WorldGeneratorManager {
                 DependencyResolver resolver = new DependencyResolver(moduleManager.getRegistry());
                 ResolutionResult resolutionResult = resolver.resolve(module.getId());
                 if (resolutionResult.isSuccess()) {
-                    try (ModuleEnvironment tempEnvironment = moduleManager.loadEnvironment(resolutionResult.getModules(), false)) {
+                    try (ModuleEnvironment tempEnvironment = moduleManager.createEnvironment(resolutionResult.getModules())) {
                         for (Class<?> generatorClass : tempEnvironment.getTypesAnnotatedWith(RegisterWorldGenerator.class)) {
                             if (tempEnvironment.getModuleProviding(generatorClass).equals(module.getId())) {
                                 RegisterWorldGenerator annotation = generatorClass.getAnnotation(RegisterWorldGenerator.class);
@@ -104,7 +103,6 @@ public class WorldGeneratorManager {
      * @return The instantiated world generator.
      */
     public WorldGenerator createGenerator(SimpleUri uri, Context context) throws UnresolvedWorldGeneratorException {
-        ModuleManager moduleManager = context.get(ModuleManager.class);
         Module module = moduleManager.getEnvironment().get(uri.getModuleName());
         if (module == null) {
             DependencyResolver resolver = new DependencyResolver(moduleManager.getRegistry());
@@ -116,7 +114,7 @@ public class WorldGeneratorManager {
                     throw new UnresolvedWorldGeneratorException("Unable to resolve world generator '" + uri + "' - unable to resolve module dependencies");
                 }
             }
-            try (ModuleEnvironment environment = moduleManager.loadEnvironment(result.getModules(), false)) {
+            try (ModuleEnvironment environment = moduleManager.createEnvironment(result.getModules())) {
                 return createWorldGenerator(uri, context, environment);
             }
         } else {

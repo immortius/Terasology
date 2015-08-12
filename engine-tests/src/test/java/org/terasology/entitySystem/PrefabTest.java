@@ -23,7 +23,6 @@ import org.terasology.assets.AssetFactory;
 import org.terasology.assets.management.AssetManager;
 import org.terasology.assets.module.ModuleAwareAssetTypeManager;
 import org.terasology.context.internal.ContextImpl;
-import org.terasology.engine.bootstrap.EntitySystemSetupUtil;
 import org.terasology.engine.module.ModuleManager;
 import org.terasology.entitySystem.metadata.ComponentLibrary;
 import org.terasology.entitySystem.prefab.Prefab;
@@ -68,8 +67,6 @@ public class PrefabTest {
         ModuleManager moduleManager = ModuleManagerFactory.create();
         context.put(ModuleManager.class, moduleManager);
 
-        EntitySystemSetupUtil.addReflectionBasedLibraries(context);
-
         ModuleAwareAssetTypeManager assetTypeManager = new ModuleAwareAssetTypeManager();
         assetTypeManager.registerCoreAssetType(Prefab.class,
                 (AssetFactory<Prefab, PrefabData>) PojoPrefab::new, "prefabs");
@@ -83,7 +80,6 @@ public class PrefabTest {
         NetworkSystem networkSystem = mock(NetworkSystem.class);
         when(networkSystem.getMode()).thenReturn(NetworkMode.NONE);
         context.put(NetworkSystem.class, networkSystem);
-        EntitySystemSetupUtil.addEntityManagementRelatedClasses(context);
 
         prefabManager = new PojoPrefabManager(context);
     }

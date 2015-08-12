@@ -74,9 +74,6 @@ public class InputSystem extends BaseComponentSystem {
     private Time time;
 
     @In
-    private LocalPlayer localPlayer;
-
-    @In
     private CameraTargetSystem targetSystem;
 
     @In
@@ -98,6 +95,20 @@ public class InputSystem extends BaseComponentSystem {
     private BindableButtonImpl mouseWheelDownBind;
 
     private boolean capturingMouse = true;
+
+    private final List<EntityRef> inputEntities = Lists.newArrayList();
+
+    public void addInputEntity(EntityRef entity) {
+        inputEntities.add(entity);
+    }
+
+    public void removeInputEntity(EntityRef entity) {
+        inputEntities.remove(entity);
+    }
+
+    public void clearInputEntities() {
+        inputEntities.clear();
+    }
 
     public void setMouseDevice(MouseDevice mouseDevice) {
         this.mouse = mouseDevice;
@@ -427,8 +438,8 @@ public class InputSystem extends BaseComponentSystem {
         return mouseWheelEvent.isConsumed();
     }
 
-    private EntityRef[] getInputEntities() {
-        return new EntityRef[]{localPlayer.getClientEntity(), localPlayer.getCharacterEntity()};
+    private List<EntityRef> getInputEntities() {
+        return inputEntities;
     }
 
 }

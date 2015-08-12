@@ -15,10 +15,7 @@
  */
 package org.terasology.engine.subsystem.headless;
 
-import org.terasology.assets.module.ModuleAwareAssetTypeManager;
 import org.terasology.context.Context;
-import org.terasology.engine.ComponentSystemManager;
-import org.terasology.engine.modes.GameState;
 import org.terasology.engine.subsystem.EngineSubsystem;
 import org.terasology.input.InputSystem;
 
@@ -30,13 +27,9 @@ public class HeadlessInput implements EngineSubsystem {
     }
 
     @Override
-    public void postInitialise(Context context) {
-        initControls(context);
-    }
-
-    private void initControls(Context context) {
+    public void postInitialise(Context rootContext, Context environmentContext) {
         InputSystem inputSystem = new InputSystem();
-        context.put(InputSystem.class, inputSystem);
+        rootContext.put(InputSystem.class, inputSystem);
     }
 
 }

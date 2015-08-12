@@ -32,14 +32,14 @@ import java.io.UnsupportedEncodingException;
 public abstract class BaseLwjglSubsystem implements EngineSubsystem {
 
     private static final Logger logger = LoggerFactory.getLogger(BaseLwjglSubsystem.class);
-    private static boolean initialised;
+    private static boolean lwjglInitialised;
 
     @Override
-    public synchronized void preInitialise(Context context) {
-        if (!initialised) {
+    public synchronized void populateRootContext(Context rootContext) {
+        if (!lwjglInitialised) {
             initLogger();
             LWJGLHelper.initNativeLibs();
-            initialised = true;
+            lwjglInitialised = true;
         }
     }
 

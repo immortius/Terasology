@@ -22,61 +22,38 @@ import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.assets.AssetFactory;
-import org.terasology.assets.management.AssetManager;
-import org.terasology.assets.module.ModuleAwareAssetTypeManager;
 import org.terasology.context.Context;
 import org.terasology.context.internal.ContextImpl;
-import org.terasology.engine.bootstrap.EnvironmentSwitchHandler;
 import org.terasology.engine.modes.GameState;
-import org.terasology.engine.module.ModuleManager;
-import org.terasology.engine.module.ModuleManagerImpl;
 import org.terasology.engine.paths.PathManager;
 import org.terasology.engine.subsystem.DisplayDevice;
 import org.terasology.engine.subsystem.EngineSubsystem;
 import org.terasology.engine.subsystem.RenderingSubsystemFactory;
+import org.terasology.engine.subsystem.common.BehaviorSubsystem;
 import org.terasology.engine.subsystem.common.CommandSubsystem;
 import org.terasology.engine.subsystem.common.ConfigurationSubsystem;
+import org.terasology.engine.subsystem.common.EntitySubsystem;
 import org.terasology.engine.subsystem.common.GameSubsystem;
 import org.terasology.engine.subsystem.common.MonitoringSubsystem;
 import org.terasology.engine.subsystem.common.NetworkSubsystem;
+import org.terasology.engine.subsystem.common.ObjectManipulationSubsystem;
 import org.terasology.engine.subsystem.common.PhysicsSubsystem;
 import org.terasology.engine.subsystem.common.ThreadManagerSubsystem;
 import org.terasology.engine.subsystem.common.TimeSubsystem;
 import org.terasology.engine.subsystem.common.WorldGenerationSubsystem;
-import org.terasology.entitySystem.prefab.Prefab;
-import org.terasology.entitySystem.prefab.PrefabData;
-import org.terasology.entitySystem.prefab.internal.PojoPrefab;
-import org.terasology.game.Game;
+import org.terasology.engine.subsystem.common.asset.AssetSubsystem;
+import org.terasology.engine.subsystem.common.module.EnvironmentSubsystem;
+import org.terasology.engine.subsystem.common.ui.UISubsystem;
 import org.terasology.input.InputSystem;
-import org.terasology.logic.behavior.asset.BehaviorTree;
-import org.terasology.logic.behavior.asset.BehaviorTreeData;
+import org.terasology.module.DependencyResolver;
+import org.terasology.module.Module;
+import org.terasology.module.ModuleEnvironment;
+import org.terasology.module.ResolutionResult;
 import org.terasology.monitoring.Activity;
 import org.terasology.monitoring.PerformanceMonitor;
-import org.terasology.network.NetworkSystem;
-import org.terasology.persistence.typeHandling.TypeSerializationLibrary;
-import org.terasology.reflection.copy.CopyStrategyLibrary;
-import org.terasology.reflection.reflect.ReflectFactory;
-import org.terasology.reflection.reflect.ReflectionReflectFactory;
+import org.terasology.naming.Name;
 import org.terasology.registry.CoreRegistry;
-import org.terasology.rendering.nui.asset.UIData;
-import org.terasology.rendering.nui.asset.UIElement;
-import org.terasology.rendering.nui.skin.UISkin;
-import org.terasology.rendering.nui.skin.UISkinData;
 import org.terasology.version.TerasologyVersion;
-import org.terasology.world.block.family.BlockFamilyFactoryRegistry;
-import org.terasology.world.block.family.DefaultBlockFamilyFactoryRegistry;
-import org.terasology.world.block.loader.BlockFamilyDefinition;
-import org.terasology.world.block.loader.BlockFamilyDefinitionData;
-import org.terasology.world.block.loader.BlockFamilyDefinitionFormat;
-import org.terasology.world.block.shapes.BlockShape;
-import org.terasology.world.block.shapes.BlockShapeData;
-import org.terasology.world.block.shapes.BlockShapeImpl;
-import org.terasology.world.block.sounds.BlockSounds;
-import org.terasology.world.block.sounds.BlockSoundsData;
-import org.terasology.world.block.tiles.BlockTile;
-import org.terasology.world.block.tiles.TileData;
-import org.terasology.world.generator.internal.WorldGeneratorManager;
 
 import java.util.Collection;
 import java.util.Deque;
@@ -127,14 +104,21 @@ public class TerasologyEngine implements GameEngine {
     private volatile boolean shutdownRequested;
     private volatile boolean running;
 
+    private EnvironmentSubsystem environmentSubsystem;
     private TimeSubsystem timeSubsystem;
+    private EntitySubsystem entitySubsystem;
+    private AssetSubsystem assetSubsystem;
     private Deque<EngineSubsystem> allSubsystems;
-    private ModuleAwareAssetTypeManager assetTypeManager;
 
     /**
-     * Contains objects that life for the duration of this engine.
+     * Contains objects that live for the duration of this engine.
      */
     private Context rootContext;
+
+    /**
+     * Contains objects that live for the duration of the current context.
+     */
+    private Context environmentContext;
 
     /**
      * This constructor initializes the engine by initializing its systems,
@@ -148,6 +132,9 @@ public class TerasologyEngine implements GameEngine {
 
         this.rootContext = new ContextImpl();
         this.timeSubsystem = timeSubsystem;
+        this.environmentSubsystem = new EnvironmentSubsystem();
+        this.entitySubsystem = new EntitySubsystem();
+        this.assetSubsystem = new AssetSubsystem();
         /*
          * We can't load the engine without core registry yet.
          * e.g. the statically created MaterialLoader needs the CoreRegistry to get the AssetManager.
@@ -159,6 +146,9 @@ public class TerasologyEngine implements GameEngine {
         this.allSubsystems = Queues.newArrayDeque();
         this.allSubsystems.add(new ConfigurationSubsystem());
         this.allSubsystems.add(timeSubsystem);
+        this.allSubsystems.add(environmentSubsystem);
+        this.allSubsystems.add(entitySubsystem);
+        this.allSubsystems.add(assetSubsystem);
         this.allSubsystems.addAll(subsystems);
         this.allSubsystems.add(new ThreadManagerSubsystem());
         this.allSubsystems.add(new MonitoringSubsystem());
@@ -167,40 +157,27 @@ public class TerasologyEngine implements GameEngine {
         this.allSubsystems.add(new NetworkSubsystem());
         this.allSubsystems.add(new WorldGenerationSubsystem());
         this.allSubsystems.add(new GameSubsystem());
+        this.allSubsystems.add(new ObjectManipulationSubsystem());
+        this.allSubsystems.add(new BehaviorSubsystem());
     }
 
-    private void initialize() {
+    private void initialize(Set<Name> initialModules) {
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
         Stopwatch totalInitTime = Stopwatch.createStarted();
         try {
             logger.info("Initializing Terasology...");
             logEnvironmentInfo();
 
-            // TODO: Need to get everything thread safe and get rid of the concept of "GameThread" as much as possible.
+            // TODO: Need to get everything thread safe and get rid of the concept of "GameThread" as much as possible?
             GameThread.setToCurrentThread();
 
             preInitSubsystems();
-
-            initManagers();
-
             initSubsystems();
-
-            changeStatus(TerasologyEngineStatus.INITIALIZING_ASSET_MANAGEMENT);
-            initAssets();
-            EnvironmentSwitchHandler environmentSwitcher = new EnvironmentSwitchHandler();
-            rootContext.put(EnvironmentSwitchHandler.class, environmentSwitcher);
-
-            environmentSwitcher.handleSwitchToGameEnvironment(rootContext);
-
+            registerCoreAssetTypes();
+            switchToInitialEnvironment(initialModules);
             postInitSubsystems();
-
             verifyInitialisation();
 
-            /**
-             * Prevent objects being put in engine context after init phase. Engine states should use/create a
-             * child context.
-             */
-            CoreRegistry.setContext(null);
         } catch (RuntimeException e) {
             logger.error("Failed to initialise Terasology", e);
             cleanup();
@@ -210,6 +187,15 @@ public class TerasologyEngine implements GameEngine {
 
         double seconds = 0.001 * totalInitTime.elapsed(TimeUnit.MILLISECONDS);
         logger.info("Initialization completed in {}sec.", String.format("%.2f", seconds));
+    }
+
+    private void switchToInitialEnvironment(Set<Name> initialModules) {
+        ResolutionResult resolutionResult = new DependencyResolver(environmentSubsystem.getRegistry()).resolve(initialModules);
+        if (resolutionResult.isSuccess()) {
+            changeModuleEnvironment(resolutionResult.getModules());
+        } else {
+            throw new RuntimeException("Unable to resolve initial modules");
+        }
     }
 
     private void verifyInitialisation() {
@@ -239,7 +225,7 @@ public class TerasologyEngine implements GameEngine {
     private void preInitSubsystems() {
         for (EngineSubsystem subsystem : getSubsystems()) {
             changeStatus(() -> "Pre-initialising " + subsystem.getName() + " subsystem");
-            subsystem.preInitialise(rootContext);
+            subsystem.populateRootContext(rootContext);
         }
     }
 
@@ -255,7 +241,7 @@ public class TerasologyEngine implements GameEngine {
      */
     private void postInitSubsystems() {
         for (EngineSubsystem subsystem : getSubsystems()) {
-            subsystem.postInitialise(rootContext);
+            subsystem.postInitialise(rootContext, environmentContext);
         }
     }
 
@@ -271,53 +257,9 @@ public class TerasologyEngine implements GameEngine {
         }
     }
 
-    private void initManagers() {
-
-        changeStatus(TerasologyEngineStatus.INITIALIZING_MODULE_MANAGER);
-        ModuleManager moduleManager = new ModuleManagerImpl();
-        rootContext.put(ModuleManager.class, moduleManager);
-
-        changeStatus(TerasologyEngineStatus.INITIALIZING_LOWLEVEL_OBJECT_MANIPULATION);
-        ReflectFactory reflectFactory = new ReflectionReflectFactory();
-        rootContext.put(ReflectFactory.class, reflectFactory);
-
-        CopyStrategyLibrary copyStrategyLibrary = new CopyStrategyLibrary(reflectFactory);
-        rootContext.put(CopyStrategyLibrary.class, copyStrategyLibrary);
-        rootContext.put(TypeSerializationLibrary.class, new TypeSerializationLibrary(reflectFactory,
-                copyStrategyLibrary));
-
-        changeStatus(TerasologyEngineStatus.INITIALIZING_ASSET_TYPES);
-        assetTypeManager = new ModuleAwareAssetTypeManager();
-        rootContext.put(ModuleAwareAssetTypeManager.class, assetTypeManager);
-        rootContext.put(AssetManager.class, assetTypeManager.getAssetManager());
-    }
-
-    private void initAssets() {
-        DefaultBlockFamilyFactoryRegistry familyFactoryRegistry = new DefaultBlockFamilyFactoryRegistry();
-        rootContext.put(BlockFamilyFactoryRegistry.class, familyFactoryRegistry);
-
-        // cast lambdas explicitly to avoid inconsistent compiler behavior wrt. type inference
-        assetTypeManager.registerCoreAssetType(Prefab.class,
-                (AssetFactory<Prefab, PrefabData>) PojoPrefab::new, false, "prefabs");
-        assetTypeManager.registerCoreAssetType(BlockShape.class,
-                (AssetFactory<BlockShape, BlockShapeData>) BlockShapeImpl::new, "shapes");
-        assetTypeManager.registerCoreAssetType(BlockSounds.class,
-                (AssetFactory<BlockSounds, BlockSoundsData>) BlockSounds::new, "blockSounds");
-        assetTypeManager.registerCoreAssetType(BlockTile.class,
-                (AssetFactory<BlockTile, TileData>) BlockTile::new, "blockTiles");
-        assetTypeManager.registerCoreAssetType(BlockFamilyDefinition.class,
-                (AssetFactory<BlockFamilyDefinition, BlockFamilyDefinitionData>) BlockFamilyDefinition::new, "blocks");
-        assetTypeManager.registerCoreFormat(BlockFamilyDefinition.class,
-                new BlockFamilyDefinitionFormat(assetTypeManager.getAssetManager(), familyFactoryRegistry));
-        assetTypeManager.registerCoreAssetType(UISkin.class,
-                (AssetFactory<UISkin, UISkinData>) UISkin::new, "skins");
-        assetTypeManager.registerCoreAssetType(BehaviorTree.class,
-                (AssetFactory<BehaviorTree, BehaviorTreeData>) BehaviorTree::new, false, "behaviors");
-        assetTypeManager.registerCoreAssetType(UIElement.class,
-                (AssetFactory<UIElement, UIData>) UIElement::new, "ui");
-
+    private void registerCoreAssetTypes() {
         for (EngineSubsystem subsystem : allSubsystems) {
-            subsystem.registerCoreAssetTypes(assetTypeManager);
+            subsystem.registerCoreAssetTypes(assetSubsystem.getAssetTypeManager());
         }
     }
 
@@ -353,10 +295,11 @@ public class TerasologyEngine implements GameEngine {
      *                     the application has or hasn't been started headless.
      */
     @Override
-    public synchronized void run(GameState initialState) {
+    public synchronized void run(GameState initialState, Set<Name> initialModuleEnvironment) {
         Preconditions.checkState(!running);
         running = true;
-        initialize();
+        initialize(initialModuleEnvironment);
+
         changeStatus(StandardGameStatus.RUNNING);
 
         try {
@@ -388,7 +331,7 @@ public class TerasologyEngine implements GameEngine {
         PerformanceMonitor.startActivity("Other");
         // MAIN GAME LOOP
         while (!shutdownRequested) {
-            assetTypeManager.reloadChangedOnDisk();
+            assetSubsystem.getAssetTypeManager().reloadChangedOnDisk();
 
             processPendingState();
 
@@ -431,16 +374,20 @@ public class TerasologyEngine implements GameEngine {
         logger.info("Shutting down Terasology...");
         changeStatus(StandardGameStatus.SHUTTING_DOWN);
 
-        if (currentState != null) {
-            currentState.dispose();
-            currentState = null;
+        try {
+            if (currentState != null) {
+                currentState.dispose();
+                currentState = null;
+            }
+        } catch (RuntimeException e) {
+            logger.error("Error disposing current state during shutdown", e);
         }
 
         Iterator<EngineSubsystem> preshutdownIter = allSubsystems.descendingIterator();
         while (preshutdownIter.hasNext()) {
             EngineSubsystem subsystem = preshutdownIter.next();
             try {
-                subsystem.preShutdown();
+                subsystem.prepareForShutdown();
             } catch (RuntimeException e) {
                 logger.error("Error preparing to shutdown {} subsystem", subsystem.getName(), e);
             }
@@ -521,6 +468,39 @@ public class TerasologyEngine implements GameEngine {
         return running;
     }
 
+    @Override
+    public void changeModuleEnvironment(Set<Module> modules) {
+        ModuleEnvironment newEnvironment = environmentSubsystem.createEnvironment(modules);
+        environmentContext = new ContextImpl(rootContext);
+        CoreRegistry.setContext(environmentContext);
+
+        for (EngineSubsystem subsystem : allSubsystems) {
+            subsystem.populateEnvironmentContext(newEnvironment, environmentContext);
+        }
+
+        for (EngineSubsystem subsystem : allSubsystems) {
+            subsystem.preEnvironmentChange(newEnvironment, environmentContext, assetSubsystem.getAssetTypeManager());
+        }
+
+        ModuleEnvironment oldEnvironment = environmentSubsystem.getEnvironment();
+        environmentSubsystem.setCurrentEnvironment(newEnvironment);
+        assetSubsystem.getAssetTypeManager().switchEnvironment(newEnvironment);
+
+        for (EngineSubsystem subsystem : allSubsystems) {
+            subsystem.registerSystems(entitySubsystem.getComponentSystemManager());
+        }
+
+        for (EngineSubsystem subsystem : allSubsystems) {
+            subsystem.postEnvironmentChange(newEnvironment, environmentContext);
+        }
+
+        if (oldEnvironment != null) {
+            oldEnvironment.close();
+        }
+
+
+    }
+
     public Iterable<EngineSubsystem> getSubsystems() {
         return allSubsystems;
     }
@@ -536,19 +516,8 @@ public class TerasologyEngine implements GameEngine {
     }
 
     @Override
-    public Context createChildContext() {
-        return new ContextImpl(rootContext);
+    public Context getCurrentContext() {
+        return environmentContext;
     }
 
-    /**
-     * Allows it to obtain objects directly from the context of the game engine. It exists only for situations in
-     * which no child context exists yet. If there is a child context then it automatically contains the objects of
-     * the engine context. Thus normal code should just work with the (child) context that is available to it
-     * instead of using this method.
-     *
-     * @return a object directly from the context of the game engine
-     */
-    public <T> T getFromEngineContext(Class<? extends T> type) {
-        return rootContext.get(type);
-    }
 }

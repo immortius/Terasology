@@ -16,13 +16,12 @@
 package org.terasology.testUtil;
 
 import com.google.common.collect.Sets;
-
 import org.terasology.engine.TerasologyConstants;
 import org.terasology.engine.module.ModuleManager;
-import org.terasology.engine.module.ModuleManagerImpl;
+import org.terasology.engine.subsystem.common.module.EnvironmentSubsystem;
 import org.terasology.module.ClasspathModule;
 import org.terasology.module.ModuleMetadata;
-import org.terasology.module.ModuleMetadataReader;
+import org.terasology.module.ModuleMetadataJsonAdapter;
 import org.terasology.naming.Name;
 
 import java.io.InputStreamReader;
@@ -36,15 +35,15 @@ public final class ModuleManagerFactory {
     }
 
     public static ModuleManager create() throws Exception {
-        ModuleManager moduleManager = new ModuleManagerImpl();
+        EnvironmentSubsystem moduleManager = new EnvironmentSubsystem();
         try (Reader reader = new InputStreamReader(ModuleManagerFactory.class.getResourceAsStream("/module.txt"), TerasologyConstants.CHARSET)) {
-            ModuleMetadata metadata = new ModuleMetadataReader().read(reader);
+            ModuleMetadata metadata = new ModuleMetadataJsonAdapter().read(reader);
             moduleManager.getRegistry().add(ClasspathModule.create(metadata, ModuleManagerFactory.class));
         }
-        moduleManager.loadEnvironment(
+        moduleManager.setCurrentEnvironment(moduleManager.createEnvironment(
                 Sets.newHashSet(moduleManager.getRegistry().getLatestModuleVersion(new Name("engine")),
-                        moduleManager.getRegistry().getLatestModuleVersion(new Name("unittest"))), true
-        );
+                        moduleManager.getRegistry().getLatestModuleVersion(new Name("unittest")))
+        ));
         return moduleManager;
     }
 }

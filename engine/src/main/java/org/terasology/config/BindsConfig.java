@@ -133,7 +133,7 @@ public final class BindsConfig {
             if (moduleManager.getRegistry().getLatestModuleVersion(moduleId).isCodeModule()) {
                 ResolutionResult result = resolver.resolve(moduleId);
                 if (result.isSuccess()) {
-                    try (ModuleEnvironment environment = moduleManager.loadEnvironment(result.getModules(), false)) {
+                    try (ModuleEnvironment environment = moduleManager.createEnvironment(result.getModules())) {
                         config.addDefaultsFor(moduleId, environment.getTypesAnnotatedWith(RegisterBindButton.class, new FromModule(environment, moduleId)));
                     }
                 }
@@ -152,7 +152,7 @@ public final class BindsConfig {
             if (moduleManager.getRegistry().getLatestModuleVersion(moduleId).isCodeModule()) {
                 ResolutionResult result = resolver.resolve(moduleId);
                 if (result.isSuccess()) {
-                    try (ModuleEnvironment environment = moduleManager.loadEnvironment(result.getModules(), false)) {
+                    try (ModuleEnvironment environment = moduleManager.createEnvironment(result.getModules())) {
                         updateInputsFor(moduleId, environment.getTypesAnnotatedWith(RegisterBindButton.class, new FromModule(environment, moduleId)));
                     }
                 }

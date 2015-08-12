@@ -20,6 +20,7 @@ import java.util.Set;
 
 import org.terasology.module.Module;
 import org.terasology.module.ModuleEnvironment;
+import org.terasology.module.ModuleMetadataJsonAdapter;
 import org.terasology.module.ModuleMetadataReader;
 import org.terasology.module.ModuleRegistry;
 
@@ -33,7 +34,7 @@ public interface ModuleManager {
 
     ModuleEnvironment getEnvironment();
 
-    ModuleEnvironment loadEnvironment(Set<Module> modules, boolean asPrimary);
+    ModuleMetadataJsonAdapter getMetadataReader();
 
-    ModuleMetadataReader getModuleMetadataReader();
+    ModuleEnvironment createEnvironment(Set<Module> modules);
 }

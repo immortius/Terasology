@@ -21,13 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.context.Context;
 import org.terasology.engine.GameEngine;
-import org.terasology.engine.bootstrap.EnvironmentSwitchHandler;
 import org.terasology.engine.modes.StateMainMenu;
 import org.terasology.engine.module.ModuleManager;
 import org.terasology.game.GameManifest;
 import org.terasology.module.DependencyResolver;
-import org.terasology.module.Module;
-import org.terasology.module.ModuleEnvironment;
 import org.terasology.module.ResolutionResult;
 import org.terasology.naming.Name;
 import org.terasology.naming.NameVersion;
@@ -44,7 +41,6 @@ public class RegisterMods extends SingleStepLoadProcess {
     private final Context context;
     private final GameManifest gameManifest;
     private Thread applyModulesThread;
-    private ModuleEnvironment oldEnvironment;
 
     public RegisterMods(Context context, GameManifest gameManifest) {
         this.context = context;
@@ -63,13 +59,7 @@ public class RegisterMods extends SingleStepLoadProcess {
     @Override
     public boolean step() {
         if (applyModulesThread != null) {
-            if (!applyModulesThread.isAlive()) {
-                if (oldEnvironment != null) {
-                    oldEnvironment.close();
-                }
-                return true;
-            }
-            return false;
+            return !applyModulesThread.isAlive();
         } else {
             ModuleManager moduleManager = context.get(ModuleManager.class);
             List<Name> moduleIds = Lists.newArrayListWithCapacity(gameManifest.getModules().size());
@@ -80,15 +70,7 @@ public class RegisterMods extends SingleStepLoadProcess {
             DependencyResolver resolver = new DependencyResolver(moduleManager.getRegistry());
             ResolutionResult result = resolver.resolve(moduleIds);
             if (result.isSuccess()) {
-                oldEnvironment = moduleManager.getEnvironment();
-                ModuleEnvironment env = moduleManager.loadEnvironment(result.getModules(), true);
-
-                for (Module moduleInfo : env.getModulesOrderedByDependencies()) {
-                    logger.info("Activating module: {}:{}", moduleInfo.getId(), moduleInfo.getVersion());
-                }
-
-                EnvironmentSwitchHandler environmentSwitchHandler = context.get(EnvironmentSwitchHandler.class);
-                applyModulesThread = new Thread(() -> environmentSwitchHandler.handleSwitchToGameEnvironment(context));
+                applyModulesThread = new Thread(() -> context.get(GameEngine.class).changeModuleEnvironment(result.getModules()));
                 applyModulesThread.start();
                 return false;
             } else {

@@ -112,12 +112,20 @@ public class LwjglGraphics extends BaseLwjglSubsystem {
     }
 
     @Override
+    public synchronized void populateRootContext(Context rootContext) {
+    }
+
+    @Override
     public void initialise(GameEngine gameEngine, Context rootContext) {
         this.engine = gameEngine;
         this.context = rootContext;
         this.config = context.get(Config.class).getRendering();
         lwjglDisplay = new LwjglDisplayDevice(context);
         context.put(DisplayDevice.class, lwjglDisplay);
+
+        initDisplay();
+        initOpenGL(context);
+        context.put(RenderingSubsystemFactory.class, new LwjglRenderingSubsystemFactory(bufferPool));
     }
 
     @Override
@@ -161,13 +169,8 @@ public class LwjglGraphics extends BaseLwjglSubsystem {
     }
 
     @Override
-    public void postInitialise(Context rootContext) {
-        context.put(RenderingSubsystemFactory.class, new LwjglRenderingSubsystemFactory(bufferPool));
-
-        initDisplay();
-        initOpenGL(context);
-
-        context.put(CanvasRenderer.class, new LwjglCanvasRenderer(context));
+    public void postInitialise(Context rootContext, Context environmentContext) {
+        context.put(CanvasRenderer.class, new LwjglCanvasRenderer(rootContext));
     }
 
     @Override
@@ -198,7 +201,7 @@ public class LwjglGraphics extends BaseLwjglSubsystem {
     }
 
     @Override
-    public void preShutdown() {
+    public void prepareForShutdown() {
         if (Display.isCreated() && !Display.isFullscreen() && Display.isVisible()) {
             config.setWindowPosX(Display.getX());
             config.setWindowPosY(Display.getY());

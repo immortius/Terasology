@@ -16,9 +16,14 @@
 package org.terasology.engine.subsystem.common;
 
 import org.terasology.context.Context;
+import org.terasology.engine.ComponentSystemManager;
 import org.terasology.engine.GameEngine;
 import org.terasology.engine.subsystem.EngineSubsystem;
+import org.terasology.logic.console.Console;
+import org.terasology.logic.console.ConsoleImpl;
+import org.terasology.logic.console.ConsoleSystem;
 import org.terasology.logic.console.commandSystem.adapter.ParameterAdapterManager;
+import org.terasology.logic.console.commands.CoreCommands;
 
 /**
  *
@@ -32,5 +37,12 @@ public class CommandSubsystem implements EngineSubsystem {
     @Override
     public void initialise(GameEngine engine, Context rootContext) {
         rootContext.put(ParameterAdapterManager.class, ParameterAdapterManager.createCore());
+        rootContext.put(Console.class, new ConsoleImpl(rootContext));
+    }
+
+    @Override
+    public void registerSystems(ComponentSystemManager componentSystemManager) {
+        componentSystemManager.register(new ConsoleSystem(), "engine:ConsoleSystem");
+        componentSystemManager.register(new CoreCommands(), "engine:CoreCommands");
     }
 }

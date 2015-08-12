@@ -16,14 +16,14 @@
 
 package org.terasology.reflection.metadata;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
-import org.terasology.context.Context;
 import org.terasology.engine.SimpleUri;
-import org.terasology.engine.module.ModuleManager;
 import org.terasology.module.Module;
+import org.terasology.module.ModuleEnvironment;
 import org.terasology.naming.Name;
 import org.terasology.reflection.copy.CopyStrategyLibrary;
 import org.terasology.reflection.reflect.ReflectFactory;
@@ -40,20 +40,25 @@ import java.util.Set;
  */
 public abstract class AbstractClassLibrary<T> implements ClassLibrary<T> {
 
-    private ModuleManager moduleManager;
+    private ModuleEnvironment moduleEnvironment;
     protected final CopyStrategyLibrary copyStrategyLibrary;
     private ReflectFactory reflectFactory;
 
     private Map<Class<? extends T>, ClassMetadata<? extends T, ?>> classLookup = Maps.newHashMap();
     private Table<Name, Name, ClassMetadata<? extends T, ?>> uriLookup = HashBasedTable.create();
 
-    public AbstractClassLibrary(Context context) {
-        this.moduleManager = context.get(ModuleManager.class);
-        this.reflectFactory = context.get(ReflectFactory.class);
-        this.copyStrategyLibrary = context.get(CopyStrategyLibrary.class);
+    public AbstractClassLibrary(ModuleEnvironment environment, ReflectFactory reflectFactory, CopyStrategyLibrary copyStrategyLibrary) {
+        Preconditions.checkNotNull(environment);
+        Preconditions.checkNotNull(reflectFactory);
+        Preconditions.checkNotNull(copyStrategyLibrary);
+        this.moduleEnvironment = environment;
+        this.reflectFactory = reflectFactory;
+        this.copyStrategyLibrary = copyStrategyLibrary;
     }
 
     public AbstractClassLibrary(AbstractClassLibrary<T> factory, CopyStrategyLibrary copyStrategies) {
+        Preconditions.checkNotNull(factory);
+        Preconditions.checkNotNull(copyStrategies);
         this.reflectFactory = factory.reflectFactory;
         this.copyStrategyLibrary = copyStrategies;
         for (Table.Cell<Name, Name, ClassMetadata<? extends T, ?>> cell: factory.uriLookup.cellSet()) {
@@ -140,7 +145,7 @@ public abstract class AbstractClassLibrary<T> implements ClassLibrary<T> {
 
     @Override
     public ClassMetadata<? extends T, ?> resolve(String name, Name context) {
-        Module moduleContext = moduleManager.getEnvironment().get(context);
+        Module moduleContext = moduleEnvironment.get(context);
         if (moduleContext != null) {
             return resolve(name, moduleContext);
         }
@@ -174,7 +179,7 @@ public abstract class AbstractClassLibrary<T> implements ClassLibrary<T> {
                 return possibilities.get(0);
             default:
                 if (context != null) {
-                    Set<Name> dependencies = moduleManager.getEnvironment().getDependencyNamesOf(context.getId());
+                    Set<Name> dependencies = moduleEnvironment.getDependencyNamesOf(context.getId());
                     Iterator<ClassMetadata<? extends T, ?>> iterator = possibilities.iterator();
                     while (iterator.hasNext()) {
                         ClassMetadata<? extends T, ?> metadata = iterator.next();

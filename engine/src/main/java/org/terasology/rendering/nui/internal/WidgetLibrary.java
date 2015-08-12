@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.context.Context;
 import org.terasology.engine.SimpleUri;
+import org.terasology.module.ModuleEnvironment;
 import org.terasology.reflection.copy.CopyStrategyLibrary;
 import org.terasology.reflection.metadata.AbstractClassLibrary;
 import org.terasology.reflection.metadata.ClassMetadata;
@@ -32,8 +33,8 @@ public class WidgetLibrary extends AbstractClassLibrary<UIWidget> {
 
     private static final Logger logger = LoggerFactory.getLogger(WidgetLibrary.class);
 
-    public WidgetLibrary(Context context) {
-        super(context);
+    public WidgetLibrary(ModuleEnvironment environment, ReflectFactory reflectFactory, CopyStrategyLibrary copyStrategyLibrary) {
+        super(environment, reflectFactory, copyStrategyLibrary);
     }
 
     @Override

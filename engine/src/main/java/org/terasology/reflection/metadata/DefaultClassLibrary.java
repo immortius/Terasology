@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.context.Context;
 import org.terasology.engine.SimpleUri;
+import org.terasology.module.ModuleEnvironment;
 import org.terasology.reflection.copy.CopyStrategyLibrary;
 import org.terasology.reflection.reflect.ReflectFactory;
 
@@ -31,8 +32,8 @@ import org.terasology.reflection.reflect.ReflectFactory;
 public final class DefaultClassLibrary<T> extends AbstractClassLibrary<T> {
     private static final Logger logger = LoggerFactory.getLogger(DefaultClassLibrary.class);
 
-    public DefaultClassLibrary(Context context) {
-        super(context);
+    public DefaultClassLibrary(ModuleEnvironment environment, ReflectFactory reflectFactory, CopyStrategyLibrary copyStrategyLibrary) {
+        super(environment, reflectFactory, copyStrategyLibrary);
     }
 
     protected <C extends T> ClassMetadata<C, ?> createMetadata(Class<C> type, ReflectFactory factory, CopyStrategyLibrary copyStrategies, SimpleUri uri) {

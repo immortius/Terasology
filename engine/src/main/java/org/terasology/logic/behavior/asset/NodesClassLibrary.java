@@ -34,8 +34,8 @@ import org.terasology.reflection.reflect.ReflectFactory;
 public class NodesClassLibrary extends AbstractClassLibrary<Node> {
     private static final Logger logger = LoggerFactory.getLogger(NodesClassLibrary.class);
 
-    public NodesClassLibrary(Context context) {
-        super(context);
+    public NodesClassLibrary(ModuleEnvironment environment, ReflectFactory reflectFactory, CopyStrategyLibrary copyStrategyLibrary) {
+        super(environment, reflectFactory, copyStrategyLibrary);
     }
 
     public void scan(ModuleEnvironment environment) {

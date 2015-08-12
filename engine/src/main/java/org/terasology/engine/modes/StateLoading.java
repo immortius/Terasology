@@ -32,8 +32,6 @@ import org.terasology.engine.modes.loadProcesses.CreateWorldEntity;
 import org.terasology.engine.modes.loadProcesses.EnsureSaveGameConsistency;
 import org.terasology.engine.modes.loadProcesses.InitialiseBlockTypeEntities;
 import org.terasology.engine.modes.loadProcesses.InitialiseCommandSystem;
-import org.terasology.engine.modes.loadProcesses.InitialiseComponentSystemManager;
-import org.terasology.engine.modes.loadProcesses.InitialiseEntitySystem;
 import org.terasology.engine.modes.loadProcesses.InitialiseGraphics;
 import org.terasology.engine.modes.loadProcesses.InitialisePhysics;
 import org.terasology.engine.modes.loadProcesses.InitialiseRemoteWorld;
@@ -59,7 +57,6 @@ import org.terasology.game.Game;
 import org.terasology.game.GameManifest;
 import org.terasology.network.JoinStatus;
 import org.terasology.network.NetworkMode;
-import org.terasology.registry.CoreRegistry;
 import org.terasology.rendering.nui.NUIManager;
 import org.terasology.rendering.nui.internal.CanvasRenderer;
 import org.terasology.rendering.nui.internal.NUIManagerInternal;
@@ -114,8 +111,7 @@ public class StateLoading implements GameState {
 
     @Override
     public void init(GameEngine engine) {
-        this.context = engine.createChildContext();
-        CoreRegistry.setContext(context);
+        this.context = engine.getCurrentContext();
 
         this.nuiManager = new NUIManagerInternal(context.get(CanvasRenderer.class), context);
         context.put(NUIManager.class, nuiManager);
@@ -148,14 +144,12 @@ public class StateLoading implements GameState {
     private void initClient() {
         loadProcesses.add(new JoinServer(context, gameManifest, joinStatus));
         loadProcesses.add(new CacheTextures());
-        loadProcesses.add(new InitialiseEntitySystem(context));
         loadProcesses.add(new RegisterBlocks(context, gameManifest));
         loadProcesses.add(new RegisterBiomes(context, gameManifest));
         loadProcesses.add(new InitialiseGraphics(context));
         loadProcesses.add(new CacheBlocks(context));
         loadProcesses.add(new LoadPrefabs(context));
         loadProcesses.add(new ProcessBlockPrefabs(context));
-        loadProcesses.add(new InitialiseComponentSystemManager(context));
         loadProcesses.add(new RegisterInputSystem(context));
         loadProcesses.add(new RegisterSystems(context, netMode));
         loadProcesses.add(new InitialiseCommandSystem(context));
@@ -173,14 +167,12 @@ public class StateLoading implements GameState {
     private void initHost() {
         loadProcesses.add(new RegisterMods(context, gameManifest));
         loadProcesses.add(new CacheTextures());
-        loadProcesses.add(new InitialiseEntitySystem(context));
         loadProcesses.add(new RegisterBlocks(context, gameManifest));
         loadProcesses.add(new RegisterBiomes(context, gameManifest));
         loadProcesses.add(new InitialiseGraphics(context));
         loadProcesses.add(new CacheBlocks(context));
         loadProcesses.add(new LoadPrefabs(context));
         loadProcesses.add(new ProcessBlockPrefabs(context));
-        loadProcesses.add(new InitialiseComponentSystemManager(context));
         loadProcesses.add(new RegisterInputSystem(context));
         loadProcesses.add(new RegisterSystems(context, netMode));
         loadProcesses.add(new InitialiseCommandSystem(context));

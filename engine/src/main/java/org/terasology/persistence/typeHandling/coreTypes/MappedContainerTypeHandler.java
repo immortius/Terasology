@@ -19,13 +19,13 @@ import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.reflection.metadata.FieldMetadata;
-import org.terasology.engine.module.UriUtil;
 import org.terasology.persistence.typeHandling.DeserializationContext;
 import org.terasology.persistence.typeHandling.PersistedData;
 import org.terasology.persistence.typeHandling.SerializationContext;
 import org.terasology.persistence.typeHandling.SimpleTypeHandler;
 import org.terasology.persistence.typeHandling.TypeHandler;
 
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -43,7 +43,7 @@ public class MappedContainerTypeHandler<T> extends SimpleTypeHandler<T> {
         this.clazz = clazz;
         this.mappedFields = mappedFields;
         for (FieldMetadata<T, ?> field : mappedFields.keySet()) {
-            this.fieldByName.put(UriUtil.normalise(field.getName()), field);
+            this.fieldByName.put(field.getName().toLowerCase(Locale.ENGLISH), field);
         }
     }
 
@@ -71,7 +71,7 @@ public class MappedContainerTypeHandler<T> extends SimpleTypeHandler<T> {
         try {
             T result = clazz.newInstance();
             for (Map.Entry<String, PersistedData> entry : data.getAsValueMap().entrySet()) {
-                FieldMetadata fieldInfo = fieldByName.get(UriUtil.normalise(entry.getKey()));
+                FieldMetadata fieldInfo = fieldByName.get(entry.getKey().toLowerCase(Locale.ENGLISH));
                 if (fieldInfo != null) {
                     TypeHandler handler = mappedFields.get(fieldInfo);
                     Object val = handler.deserialize(entry.getValue(), context);

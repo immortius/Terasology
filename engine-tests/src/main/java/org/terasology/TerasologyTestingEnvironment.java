@@ -31,7 +31,6 @@ import org.terasology.context.Context;
 import org.terasology.engine.ComponentSystemManager;
 import org.terasology.engine.EngineTime;
 import org.terasology.engine.Time;
-import org.terasology.engine.bootstrap.EntitySystemSetupUtil;
 import org.terasology.engine.modes.loadProcesses.LoadPrefabs;
 import org.terasology.engine.module.ModuleManager;
 import org.terasology.engine.paths.PathManager;
@@ -102,10 +101,8 @@ public abstract class TerasologyTestingEnvironment {
         NetworkSystemImpl networkSystem = new NetworkSystemImpl(mockTime, context);
         context.put(Game.class, new Game());
         context.put(NetworkSystem.class, networkSystem);
-        EntitySystemSetupUtil.addReflectionBasedLibraries(context);
-        EntitySystemSetupUtil.addEntityManagementRelatedClasses(context);
         engineEntityManager = context.get(EngineEntityManager.class);
-        BlockManager blockManager = context.get(BlockManager.class);
+        blockManager = context.get(BlockManager.class);
         BiomeManager biomeManager = context.get(BiomeManager.class);
 
         Path savePath = PathManager.getInstance().getSavePath("world1");

@@ -21,7 +21,6 @@ import org.terasology.context.Context;
 import org.terasology.engine.ComponentSystemManager;
 import org.terasology.engine.GameEngine;
 import org.terasology.engine.LoggingContext;
-import org.terasology.engine.bootstrap.EntitySystemSetupUtil;
 import org.terasology.engine.modes.loadProcesses.RegisterInputSystem;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.entity.internal.EngineEntityManager;
@@ -34,7 +33,6 @@ import org.terasology.logic.console.ConsoleSystem;
 import org.terasology.logic.console.commands.CoreCommands;
 import org.terasology.logic.players.LocalPlayer;
 import org.terasology.network.ClientComponent;
-import org.terasology.registry.CoreRegistry;
 import org.terasology.rendering.nui.NUIManager;
 import org.terasology.rendering.nui.internal.CanvasRenderer;
 import org.terasology.rendering.nui.internal.NUIManagerInternal;
@@ -53,8 +51,6 @@ public class StateMainMenu implements GameState {
     private Context context;
     private EngineEntityManager entityManager;
     private EventSystem eventSystem;
-    private ComponentSystemManager componentSystemManager;
-    private NUIManager nuiManager;
     private InputSystem inputSystem;
 
     private String messageOnLoad = "";
@@ -69,32 +65,11 @@ public class StateMainMenu implements GameState {
 
     @Override
     public void init(GameEngine gameEngine) {
-        context = gameEngine.createChildContext();
-        CoreRegistry.setContext(context);
-
-        //let's get the entity event system running
-        EntitySystemSetupUtil.addEntityManagementRelatedClasses(context);
+        context = gameEngine.getCurrentContext();
         entityManager = context.get(EngineEntityManager.class);
 
         eventSystem = context.get(EventSystem.class);
-        context.put(Console.class, new ConsoleImpl(context));
 
-        nuiManager = new NUIManagerInternal(context.get(CanvasRenderer.class), context);
-        context.put(NUIManager.class, nuiManager);
-
-        eventSystem.registerEventHandler(nuiManager);
-
-        componentSystemManager = new ComponentSystemManager(context);
-        context.put(ComponentSystemManager.class, componentSystemManager);
-
-        // TODO: Reduce coupling between Input system and CameraTargetSystem,
-        // TODO: potentially eliminating the following lines. See Issue #1126
-        CameraTargetSystem cameraTargetSystem = new CameraTargetSystem();
-        context.put(CameraTargetSystem.class, cameraTargetSystem);
-
-        componentSystemManager.register(cameraTargetSystem, "engine:CameraTargetSystem");
-        componentSystemManager.register(new ConsoleSystem(), "engine:ConsoleSystem");
-        componentSystemManager.register(new CoreCommands(), "engine:CoreCommands");
 
         inputSystem = context.get(InputSystem.class);
 
@@ -105,15 +80,14 @@ public class StateMainMenu implements GameState {
         LocalPlayer localPlayer = new LocalPlayer();
         context.put(LocalPlayer.class, localPlayer);
         localPlayer.setClientEntity(localPlayerEntity);
-
-        componentSystemManager.initialise();
+        context.get(InputSystem.class).addInputEntity(localPlayerEntity);
 
         playBackgroundMusic();
 
         //guiManager.openWindow("main");
         context.get(NUIManager.class).pushScreen("engine:mainMenuScreen");
         if (!messageOnLoad.isEmpty()) {
-            nuiManager.pushScreen(MessagePopup.ASSET_URI, MessagePopup.class).setMessage("Error", messageOnLoad);
+            context.get(NUIManager.class).pushScreen(MessagePopup.ASSET_URI, MessagePopup.class).setMessage("Error", messageOnLoad);
         }
     }
 
@@ -121,9 +95,7 @@ public class StateMainMenu implements GameState {
     public void dispose() {
         eventSystem.process();
 
-        componentSystemManager.shutdown();
         stopBackgroundMusic();
-        nuiManager.clear();
 
         entityManager.clear();
     }
@@ -150,7 +122,7 @@ public class StateMainMenu implements GameState {
 
     @Override
     public void render() {
-        nuiManager.render();
+        context.get(NUIManager.class).render();
     }
 
     @Override
@@ -164,6 +136,6 @@ public class StateMainMenu implements GameState {
     }
 
     private void updateUserInterface(float delta) {
-        nuiManager.update(delta);
+        context.get(NUIManager.class).update(delta);
     }
 }

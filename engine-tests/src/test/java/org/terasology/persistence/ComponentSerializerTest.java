@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.terasology.context.Context;
 import org.terasology.context.internal.ContextImpl;
 import org.terasology.engine.SimpleUri;
-import org.terasology.engine.bootstrap.EntitySystemSetupUtil;
 import org.terasology.engine.module.ModuleManager;
 import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.entity.internal.EngineEntityManager;
@@ -58,6 +57,7 @@ public class ComponentSerializerTest {
     private ReflectFactory reflectFactory = new ReflectionReflectFactory();
     private CopyStrategyLibrary copyStrategyLibrary = new CopyStrategyLibrary(reflectFactory);
     private Context context;
+
     @BeforeClass
     public static void setupClass() throws Exception {
         moduleManager = ModuleManagerFactory.create();
@@ -75,8 +75,6 @@ public class ComponentSerializerTest {
 
         NetworkSystem networkSystem = mock(NetworkSystem.class);
         context.put(NetworkSystem.class, networkSystem);
-        EntitySystemSetupUtil.addReflectionBasedLibraries(context);
-        EntitySystemSetupUtil.addEntityManagementRelatedClasses(context);
         EngineEntityManager entityManager = context.get(EngineEntityManager.class);
         entityManager.getComponentLibrary().register(new SimpleUri("test", "gettersetter"), GetterSetterComponent.class);
         entityManager.getComponentLibrary().register(new SimpleUri("test", "string"), StringComponent.class);

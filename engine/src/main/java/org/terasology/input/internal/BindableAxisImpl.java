@@ -27,6 +27,7 @@ import org.terasology.input.SendEventMode;
 import org.terasology.math.geom.Vector3f;
 import org.terasology.math.geom.Vector3i;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -83,7 +84,7 @@ public class BindableAxisImpl implements BindableAxis {
         return value;
     }
 
-    public void update(EntityRef[] inputEntities, float delta, EntityRef target, Vector3i targetBlockPos, Vector3f hitPosition, Vector3f hitNormal) {
+    public void update(Collection<EntityRef> inputEntities, float delta, EntityRef target, Vector3i targetBlockPos, Vector3f hitPosition, Vector3f hitNormal) {
         boolean posInput = positiveInput.getState() == ButtonState.DOWN;
         boolean negInput = negativeInput.getState() == ButtonState.DOWN;
 

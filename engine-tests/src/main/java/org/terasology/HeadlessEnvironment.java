@@ -34,7 +34,6 @@ import org.terasology.config.Config;
 import org.terasology.engine.ComponentSystemManager;
 import org.terasology.engine.EngineTime;
 import org.terasology.engine.Time;
-import org.terasology.engine.bootstrap.EntitySystemSetupUtil;
 import org.terasology.engine.modes.loadProcesses.LoadPrefabs;
 import org.terasology.engine.module.ModuleManager;
 import org.terasology.engine.paths.PathManager;
@@ -158,11 +157,6 @@ public class HeadlessEnvironment extends Environment {
     }
 
     @Override
-    protected void setupEntitySystem() {
-        EntitySystemSetupUtil.addEntityManagementRelatedClasses(context);
-    }
-
-    @Override
     protected void setupCollisionManager() {
         CollisionGroupManager collisionGroupManager = new CollisionGroupManager();
         context.put(CollisionGroupManager.class, collisionGroupManager);
@@ -272,15 +266,13 @@ public class HeadlessEnvironment extends Environment {
         ResolutionResult result = resolver.resolve(moduleNames);
 
         if (result.isSuccess()) {
-            ModuleEnvironment modEnv = moduleManager.loadEnvironment(result.getModules(), true);
+            ModuleEnvironment modEnv = moduleManager.createEnvironment(result.getModules());
             logger.debug("Loaded modules: " + modEnv.getModuleIdsOrderedByDependencies());
         } else {
             logger.error("Could not resolve module dependencies for " + moduleNames);
         }
 
         context.put(ModuleManager.class, moduleManager);
-
-        EntitySystemSetupUtil.addReflectionBasedLibraries(context);
     }
 
     /**

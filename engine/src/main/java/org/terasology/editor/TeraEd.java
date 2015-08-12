@@ -16,6 +16,7 @@
 package org.terasology.editor;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.editor.properties.SceneProperties;
@@ -26,11 +27,13 @@ import org.terasology.engine.TerasologyEngineBuilder;
 import org.terasology.engine.modes.StateMainMenu;
 import org.terasology.engine.paths.PathManager;
 import org.terasology.engine.subsystem.EngineSubsystem;
+import org.terasology.engine.subsystem.common.ui.UISubsystem;
 import org.terasology.engine.subsystem.lwjgl.LwjglAudio;
 import org.terasology.engine.subsystem.lwjgl.LwjglGraphics;
 import org.terasology.engine.subsystem.lwjgl.LwjglInput;
 import org.terasology.engine.subsystem.lwjgl.LwjglPortlet;
 import org.terasology.engine.subsystem.lwjgl.LwjglTimer;
+import org.terasology.naming.Name;
 
 import javax.swing.*;
 import java.util.Collection;
@@ -77,14 +80,15 @@ public final class TeraEd extends JWindow {
                     .add(new LwjglTimer())
                     .add(new LwjglAudio())
                     .add(new LwjglInput())
-                    .add(lwjglPortlet).build();
+                    .add(lwjglPortlet)
+                    .add(new UISubsystem()).build();
             sceneProperties = new SceneProperties(engine);
             mainWindow = new MainWindow(this, engine);
             lwjglPortlet.setCustomViewport(mainWindow.getViewport());
 
             engine.subscribeToStateChange(mainWindow);
 
-            engine.run(new StateMainMenu());
+            engine.run(new StateMainMenu(), Sets.newHashSet(new Name("engine")));
         } catch (Throwable t) {
             logger.error("Uncaught Exception", t);
         }

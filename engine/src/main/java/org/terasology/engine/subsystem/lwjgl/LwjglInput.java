@@ -18,24 +18,36 @@ package org.terasology.engine.subsystem.lwjgl;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.terasology.assets.module.ModuleAwareAssetTypeManager;
 import org.terasology.config.Config;
 import org.terasology.context.Context;
+import org.terasology.engine.ComponentSystemManager;
 import org.terasology.engine.modes.GameState;
 import org.terasology.input.InputSystem;
+import org.terasology.input.cameraTarget.CameraTargetSystem;
 import org.terasology.input.lwjgl.LwjglKeyboardDevice;
 import org.terasology.input.lwjgl.LwjglMouseDevice;
+import org.terasology.module.ModuleEnvironment;
 
 public class LwjglInput extends BaseLwjglSubsystem {
-
-    private static final Logger logger = LoggerFactory.getLogger(LwjglInput.class);
     private Context context;
+    private CameraTargetSystem cameraTargetSystem;
+    private InputSystem inputSystem;
 
     @Override
     public String getName() {
         return "Input";
+    }
+
+
+    @Override
+    public synchronized void populateRootContext(Context rootContext) {
+        this.context = rootContext;
+        // TODO: Reduce coupling between Input system and CameraTargetSystem,
+        // TODO: potentially eliminating the following lines. See Issue #1126
+        cameraTargetSystem = new CameraTargetSystem();
+        rootContext.put(CameraTargetSystem.class, cameraTargetSystem);
+
     }
 
     @Override
@@ -43,11 +55,27 @@ public class LwjglInput extends BaseLwjglSubsystem {
     }
 
     @Override
-    public void postInitialise(Context rootContext) {
+    public void registerSystems(ComponentSystemManager componentSystemManager) {
+        if (inputSystem != null) {
+            componentSystemManager.register(inputSystem, "engine:InputSystem");
+        }
+        componentSystemManager.register(cameraTargetSystem, "engine:CameraTargetSystem");
+    }
+
+    @Override
+    public void preEnvironmentChange(ModuleEnvironment newEnvironment, Context environmentContext, ModuleAwareAssetTypeManager assetTypeManager) {
+        if (inputSystem != null) {
+            inputSystem.clearInputEntities();
+        }
+    }
+
+    @Override
+    public void postInitialise(Context rootContext, Context environmentContext) {
         this.context = rootContext;
         initControls();
         updateInputConfig();
         Mouse.setGrabbed(false);
+        environmentContext.get(ComponentSystemManager.class).register(inputSystem);
     }
 
     @Override
@@ -66,7 +94,7 @@ public class LwjglInput extends BaseLwjglSubsystem {
             Keyboard.create();
             Keyboard.enableRepeatEvents(true);
             Mouse.create();
-            InputSystem inputSystem = new InputSystem();
+            inputSystem = new InputSystem();
             context.put(InputSystem.class, inputSystem);
             inputSystem.setMouseDevice(new LwjglMouseDevice());
             inputSystem.setKeyboardDevice(new LwjglKeyboardDevice());

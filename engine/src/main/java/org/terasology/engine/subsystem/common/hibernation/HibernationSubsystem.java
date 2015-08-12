@@ -41,13 +41,13 @@ public class HibernationSubsystem implements EngineSubsystem {
     }
 
     @Override
-    public void preInitialise(Context rootContext) {
+    public void populateRootContext(Context rootContext) {
         hibernationManager = new HibernationManager();
         rootContext.put(HibernationManager.class, hibernationManager);
     }
 
     @Override
-    public void postInitialise(Context rootContext) {
+    public void postInitialise(Context rootContext, Context environmentContext) {
         displayDevice = rootContext.get(DisplayDevice.class);
         time = rootContext.get(Time.class);
     }

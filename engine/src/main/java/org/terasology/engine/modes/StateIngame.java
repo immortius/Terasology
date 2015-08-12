@@ -15,6 +15,7 @@
  */
 package org.terasology.engine.modes;
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.TeraOVR;
@@ -24,7 +25,6 @@ import org.terasology.context.Context;
 import org.terasology.engine.ComponentSystemManager;
 import org.terasology.engine.GameEngine;
 import org.terasology.engine.GameThread;
-import org.terasology.engine.bootstrap.EnvironmentSwitchHandler;
 import org.terasology.engine.module.ModuleManager;
 import org.terasology.engine.subsystem.DisplayDevice;
 import org.terasology.entitySystem.entity.internal.EngineEntityManager;
@@ -35,8 +35,8 @@ import org.terasology.input.InputSystem;
 import org.terasology.input.cameraTarget.CameraTargetSystem;
 import org.terasology.logic.console.Console;
 import org.terasology.module.Module;
-import org.terasology.module.ModuleEnvironment;
 import org.terasology.monitoring.PerformanceMonitor;
+import org.terasology.naming.Name;
 import org.terasology.network.NetworkMode;
 import org.terasology.network.NetworkSystem;
 import org.terasology.persistence.StorageManager;
@@ -48,7 +48,7 @@ import org.terasology.rendering.world.WorldRenderer;
 import org.terasology.rendering.world.WorldRenderer.WorldRenderingStage;
 import org.terasology.world.chunks.ChunkProvider;
 
-import java.util.Collections;
+import java.util.Set;
 
 /**
  * Play mode.
@@ -152,12 +152,8 @@ public class StateIngame implements GameState {
             storageManager.finishSavingAndShutdown();
         }
 
-        ModuleEnvironment oldEnvironment = context.get(ModuleManager.class).getEnvironment();
-        context.get(ModuleManager.class).loadEnvironment(Collections.<Module>emptySet(), true);
-        context.get(EnvironmentSwitchHandler.class).handleSwitchToEmptyEnivronment(context);
-        if (oldEnvironment != null) {
-            oldEnvironment.close();
-        }
+        Set<Module> modules = Sets.newHashSet(context.get(ModuleManager.class).getRegistry().getLatestModuleVersion(new Name("engine")));
+        context.get(GameEngine.class).changeModuleEnvironment(modules);
         context.get(Console.class).dispose();
         GameThread.clearWaitingProcesses();
 

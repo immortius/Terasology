@@ -31,8 +31,8 @@ public class LwjglTimer extends BaseLwjglSubsystem implements TimeSubsystem {
     }
 
     @Override
-    public void preInitialise(Context context) {
-        super.preInitialise(context);
+    public void populateRootContext(Context context) {
+        super.populateRootContext(context);
         time = new TimeLwjgl();
         context.put(Time.class, time);
     }

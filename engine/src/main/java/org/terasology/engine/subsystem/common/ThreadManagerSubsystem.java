@@ -88,7 +88,7 @@ public class ThreadManagerSubsystem implements EngineSubsystem, ThreadManager {
     }
 
     @Override
-    public void preInitialise(Context rootContext) {
+    public void populateRootContext(Context rootContext) {
         rootContext.put(ThreadManager.class, this);
     }
 

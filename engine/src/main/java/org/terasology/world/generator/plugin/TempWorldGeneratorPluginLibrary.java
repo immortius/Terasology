@@ -17,6 +17,8 @@ package org.terasology.world.generator.plugin;
 
 import org.terasology.context.Context;
 import org.terasology.module.ModuleEnvironment;
+import org.terasology.reflection.copy.CopyStrategyLibrary;
+import org.terasology.reflection.reflect.ReflectFactory;
 
 /**
  * A fake environment so that plugins can be loaded for configuration.
@@ -25,7 +27,7 @@ import org.terasology.module.ModuleEnvironment;
  */
 public class TempWorldGeneratorPluginLibrary extends DefaultWorldGeneratorPluginLibrary {
 
-    public TempWorldGeneratorPluginLibrary(ModuleEnvironment environment, Context context) {
-        super(environment, context);
+    public TempWorldGeneratorPluginLibrary(ModuleEnvironment environment, ReflectFactory reflectFactory, CopyStrategyLibrary copyStrategyLibrary) {
+        super(environment, reflectFactory, copyStrategyLibrary);
     }
 }

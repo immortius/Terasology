@@ -18,10 +18,10 @@ package org.terasology.entitySystem.metadata;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terasology.context.Context;
 import org.terasology.engine.SimpleUri;
 import org.terasology.entitySystem.Component;
 import org.terasology.module.Module;
+import org.terasology.module.ModuleEnvironment;
 import org.terasology.naming.Name;
 import org.terasology.persistence.internal.ReadWriteStorageManager;
 import org.terasology.reflection.copy.CopyStrategy;
@@ -39,8 +39,8 @@ public class ComponentLibrary extends AbstractClassLibrary<Component> {
 
     private static final Logger logger = LoggerFactory.getLogger(ComponentLibrary.class);
 
-    public ComponentLibrary(Context context) {
-        super(context);
+    public ComponentLibrary(ModuleEnvironment environment, ReflectFactory factory, CopyStrategyLibrary copyStrategyLibrary) {
+        super(environment, factory, copyStrategyLibrary);
     }
 
     private ComponentLibrary(ComponentLibrary componentLibrary, CopyStrategyLibrary newCopyStrategies) {

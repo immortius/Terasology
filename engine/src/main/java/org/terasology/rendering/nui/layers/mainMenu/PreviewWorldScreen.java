@@ -15,6 +15,7 @@
  */
 package org.terasology.rendering.nui.layers.mainMenu;
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.asset.Assets;
@@ -22,9 +23,9 @@ import org.terasology.assets.ResourceUrn;
 import org.terasology.assets.module.ModuleAwareAssetTypeManager;
 import org.terasology.config.Config;
 import org.terasology.context.Context;
-import org.terasology.context.internal.ContextImpl;
+import org.terasology.engine.GameEngine;
 import org.terasology.engine.SimpleUri;
-import org.terasology.engine.bootstrap.EnvironmentSwitchHandler;
+import org.terasology.engine.TerasologyConstants;
 import org.terasology.engine.module.ModuleManager;
 import org.terasology.entitySystem.Component;
 import org.terasology.math.TeraMath;
@@ -32,7 +33,8 @@ import org.terasology.module.DependencyResolver;
 import org.terasology.module.ModuleEnvironment;
 import org.terasology.module.ResolutionResult;
 import org.terasology.naming.Name;
-import org.terasology.registry.CoreRegistry;
+import org.terasology.reflection.copy.CopyStrategyLibrary;
+import org.terasology.reflection.reflect.ReflectFactory;
 import org.terasology.registry.In;
 import org.terasology.rendering.assets.texture.Texture;
 import org.terasology.rendering.assets.texture.TextureData;
@@ -118,13 +120,17 @@ public class PreviewWorldScreen extends CoreScreenLayer {
         Name moduleName = worldGenUri.getModuleName();
 
         try {
+            GameEngine engine = context.get(GameEngine.class);
             DependencyResolver resolver = new DependencyResolver(moduleManager.getRegistry());
             ResolutionResult result = resolver.resolve(moduleName);
             if (result.isSuccess()) {
-                subContext = new ContextImpl(context);
-                CoreRegistry.setContext(subContext);
-                environment = moduleManager.loadEnvironment(result.getModules(), false);
-                subContext.put(WorldGeneratorPluginLibrary.class, new TempWorldGeneratorPluginLibrary(environment, subContext));
+                engine.changeModuleEnvironment(result.getModules());
+                environment = subContext.get(ModuleManager.class).getEnvironment();
+                subContext = engine.getCurrentContext();
+                subContext.put(WorldGeneratorPluginLibrary.class, new TempWorldGeneratorPluginLibrary(
+                        environment,
+                        subContext.get(ReflectFactory.class),
+                        subContext.get(CopyStrategyLibrary.class)));
 
                 worldGenerator = worldGeneratorManager.createWorldGenerator(worldGenUri, subContext, environment);
                 worldGenerator.setWorldSeed(seed.getText());
@@ -144,8 +150,6 @@ public class PreviewWorldScreen extends CoreScreenLayer {
         if (previewInitialized) {
             return false;
         } else {
-            EnvironmentSwitchHandler environmentSwitchHandler = context.get(EnvironmentSwitchHandler.class);
-            environmentSwitchHandler.handleSwitchToPreviewEnivronment(context, environment);
             genTexture();
             previewGen = new FacetLayerPreview(environment, worldGenerator);
             return true;
@@ -213,13 +217,9 @@ public class PreviewWorldScreen extends CoreScreenLayer {
 
     @Override
     public void onClosed() {
-
-        CoreRegistry.setContext(context);
-
         if (environment != null) {
-            EnvironmentSwitchHandler environmentSwitchHandler = context.get(EnvironmentSwitchHandler.class);
-            environmentSwitchHandler.handleSwitchBackFromPreviewEnivronment(context);
-            environment.close();
+            context.get(GameEngine.class).changeModuleEnvironment(
+                    Sets.newHashSet(context.get(ModuleManager.class).getRegistry().getLatestModuleVersion(TerasologyConstants.ENGINE_MODULE)));
             environment = null;
         }
 

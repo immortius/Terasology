@@ -79,14 +79,14 @@ public class HeadlessGraphics implements EngineSubsystem {
     }
 
     @Override
-    public void postInitialise(Context context) {
-        context.put(RenderingSubsystemFactory.class, new HeadlessRenderingSubsystemFactory());
+    public void postInitialise(Context rootContext, Context environmentContext) {
+        rootContext.put(RenderingSubsystemFactory.class, new HeadlessRenderingSubsystemFactory());
 
         HeadlessDisplayDevice headlessDisplay = new HeadlessDisplayDevice();
-        context.put(DisplayDevice.class, headlessDisplay);
-        initHeadless(context);
+        rootContext.put(DisplayDevice.class, headlessDisplay);
+        initHeadless(rootContext);
 
-        context.put(CanvasRenderer.class, new HeadlessCanvasRenderer());
+        rootContext.put(CanvasRenderer.class, new HeadlessCanvasRenderer());
     }
 
     private void initHeadless(Context context) {

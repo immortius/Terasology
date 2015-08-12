@@ -46,7 +46,7 @@ public class InitialiseGraphics extends SingleStepLoadProcess {
     public boolean step() {
         // Refresh widget library after modules got laoded:
         NUIManager nuiManager = context.get(NUIManager.class);
-        ((NUIManagerInternal) nuiManager).refreshWidgetsLibrary();
+        ((NUIManagerInternal) nuiManager).refreshWidgetsLibrary(context);
 
         // TODO: This should be elsewhere
         // Create gelatinousCubeMesh

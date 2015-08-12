@@ -43,7 +43,7 @@ public class ConfigurationSubsystem implements EngineSubsystem {
     }
 
     @Override
-    public void preInitialise(Context rootContext) {
+    public void populateRootContext(Context rootContext) {
         config = new Config();
         config.load();
 

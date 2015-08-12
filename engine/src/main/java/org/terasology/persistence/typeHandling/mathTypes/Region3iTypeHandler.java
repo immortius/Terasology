@@ -17,7 +17,6 @@
 package org.terasology.persistence.typeHandling.mathTypes;
 
 import com.google.common.collect.Maps;
-import org.terasology.engine.module.UriUtil;
 import org.terasology.math.Region3i;
 import org.terasology.math.geom.Vector3i;
 import org.terasology.persistence.typeHandling.DeserializationContext;
@@ -33,8 +32,8 @@ import java.util.Map;
  */
 public class Region3iTypeHandler extends SimpleTypeHandler<Region3i> {
 
-    private static final String MIN_FIELD = UriUtil.normalise("min");
-    private static final String SIZE_FIELD = UriUtil.normalise("size");
+    private static final String MIN_FIELD = "min";
+    private static final String SIZE_FIELD = "size";
 
     @Override
     public PersistedData serialize(Region3i value, SerializationContext context) {

@@ -150,7 +150,7 @@ public class ClientConnectionHandler extends SimpleChannelUpstreamHandler {
                     }
 
                     Files.copy(tempModuleLocation, finalPath);
-                    ModuleLoader loader = new ModuleLoader(moduleManager.getModuleMetadataReader());
+                    ModuleLoader loader = new ModuleLoader(moduleManager.getMetadataReader());
                     loader.setModuleInfoPath(TerasologyConstants.MODULE_INFO_FILENAME);
 
                     moduleManager.getRegistry().add(loader.load(finalPath));

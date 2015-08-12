@@ -75,8 +75,6 @@ public class Environment {
 
         setupNetwork();
 
-        setupEntitySystem();
-
         setupStorageManager();
 
         setupComponentManager();
@@ -127,10 +125,6 @@ public class Environment {
     }
 
     protected void setupCollisionManager() {
-        // empty
-    }
-
-    protected void setupEntitySystem() {
         // empty
     }
 

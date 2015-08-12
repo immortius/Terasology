@@ -29,6 +29,7 @@ import org.terasology.input.Input;
 import org.terasology.math.geom.Vector3f;
 import org.terasology.math.geom.Vector3i;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -151,7 +152,7 @@ public class BindableButtonImpl implements BindableButton {
     public boolean updateBindState(Input input,
                                    boolean pressed,
                                    float delta,
-                                   EntityRef[] inputEntities,
+                                   List<EntityRef> inputEntities,
                                    EntityRef target,
                                    Vector3i targetBlockPos,
                                    Vector3f hitPosition,
@@ -201,7 +202,7 @@ public class BindableButtonImpl implements BindableButton {
         return keyConsumed;
     }
 
-    public void update(EntityRef[] inputEntities, float delta, EntityRef target, Vector3i targetBlockPos, Vector3f hitPosition, Vector3f hitNormal) {
+    public void update(Collection<EntityRef> inputEntities, float delta, EntityRef target, Vector3i targetBlockPos, Vector3f hitPosition, Vector3f hitNormal) {
         long activateTime = this.time.getGameTimeInMs();
         if (repeating && getState() == ButtonState.DOWN && mode.isActivatedOnPress() && activateTime - lastActivateTime > repeatTime) {
             lastActivateTime = activateTime;

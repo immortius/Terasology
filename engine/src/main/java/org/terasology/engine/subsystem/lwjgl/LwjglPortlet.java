@@ -38,7 +38,7 @@ public class LwjglPortlet extends BaseLwjglSubsystem {
     }
 
     @Override
-    public void postInitialise(Context context) {
+    public void postInitialise(Context rootContext, Context environmentContext) {
         try {
             Display.setParent(customViewPort);
         } catch (LWJGLException e) {

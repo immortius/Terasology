@@ -35,6 +35,8 @@ import org.terasology.module.ModuleEnvironment;
 import org.terasology.persistence.StorageManager;
 import org.terasology.persistence.internal.ReadOnlyStorageManager;
 import org.terasology.persistence.internal.ReadWriteStorageManager;
+import org.terasology.reflection.copy.CopyStrategyLibrary;
+import org.terasology.reflection.reflect.ReflectFactory;
 import org.terasology.rendering.backdrop.BackdropProvider;
 import org.terasology.rendering.backdrop.BackdropRenderer;
 import org.terasology.rendering.backdrop.Skysphere;
@@ -89,7 +91,8 @@ public class InitialiseWorld extends SingleStepLoadProcess {
         BiomeManager biomeManager = context.get(BiomeManager.class);
 
         ModuleEnvironment environment = context.get(ModuleManager.class).getEnvironment();
-        context.put(WorldGeneratorPluginLibrary.class, new DefaultWorldGeneratorPluginLibrary(environment, context));
+        context.put(WorldGeneratorPluginLibrary.class,
+                new DefaultWorldGeneratorPluginLibrary(environment, context.get(ReflectFactory.class), context.get(CopyStrategyLibrary.class)));
 
         WorldInfo worldInfo = gameManifest.getWorldInfo(TerasologyConstants.MAIN_WORLD);
         if (worldInfo.getSeed() == null || worldInfo.getSeed().isEmpty()) {

@@ -17,6 +17,7 @@ package org.terasology.entitySystem.event.internal;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -132,6 +133,7 @@ public class EventSystemImpl implements EventSystem {
 
     @Override
     public void registerEventHandler(ComponentSystem handler) {
+        Preconditions.checkNotNull(handler);
         Class handlerClass = handler.getClass();
         if (!Modifier.isPublic(handlerClass.getModifiers())) {
             logger.error("Cannot register handler {}, must be public", handler.getClass().getName());

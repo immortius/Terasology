@@ -101,7 +101,7 @@ public class InputSettingsScreen extends CoreScreenLayer {
             if (module.isCodeModule()) {
                 ResolutionResult result = resolver.resolve(moduleId);
                 if (result.isSuccess()) {
-                    try (ModuleEnvironment environment = moduleManager.loadEnvironment(result.getModules(), false)) {
+                    try (ModuleEnvironment environment = moduleManager.createEnvironment(result.getModules())) {
                         for (Class<?> holdingType : environment.getTypesAnnotatedWith(InputCategory.class, new FromModule(environment, moduleId))) {
                             InputCategory inputCategory = holdingType.getAnnotation(InputCategory.class);
                             inputCategories.put(module.getId() + ":" + inputCategory.id(), inputCategory);

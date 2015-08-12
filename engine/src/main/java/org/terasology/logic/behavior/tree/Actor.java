@@ -21,7 +21,6 @@ import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.metadata.ComponentLibrary;
 import org.terasology.entitySystem.metadata.ComponentMetadata;
-import org.terasology.entitySystem.metadata.EntitySystemLibrary;
 import org.terasology.logic.location.LocationComponent;
 import org.terasology.module.sandbox.API;
 import org.terasology.reflection.metadata.FieldMetadata;
@@ -68,7 +67,7 @@ public class Actor {
     public <T extends Component> T component(Class<T> type) {
         T component = minion.getComponent(type);
         if (component == null) {
-            ComponentMetadata<T> metadata = CoreRegistry.get(EntitySystemLibrary.class).getComponentLibrary().getMetadata(type);
+            ComponentMetadata<T> metadata = CoreRegistry.get(ComponentLibrary.class).getMetadata(type);
             if (metadata == null || !metadata.isConstructable()) {
                 throw new RuntimeException("Cannot create component for " + type);
             }
@@ -79,7 +78,7 @@ public class Actor {
     }
 
     public Object getComponentField(ComponentFieldUri uri) {
-        ComponentLibrary componentLibrary = CoreRegistry.get(EntitySystemLibrary.class).getComponentLibrary();
+        ComponentLibrary componentLibrary = CoreRegistry.get(ComponentLibrary.class);
         ComponentMetadata<? extends Component> metadata = componentLibrary.getMetadata(uri.getComponentUri());
         if (metadata == null) {
             return null;

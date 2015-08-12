@@ -18,6 +18,10 @@ package org.terasology.engine;
 
 import org.terasology.context.Context;
 import org.terasology.engine.modes.GameState;
+import org.terasology.module.Module;
+import org.terasology.naming.Name;
+
+import java.util.Set;
 
 /**
  * The game engine is the core of Terasology. It maintains a stack of game states, that drive the behaviour of
@@ -48,7 +52,7 @@ public interface GameEngine {
      * Runs the engine, which will block the thread.
      * Invalid for a disposed engine
      */
-    void run(GameState initialState);
+    void run(GameState initialState, Set<Name> initialModuleEnvironment);
 
     /**
      * Request the engine to stop running
@@ -59,6 +63,12 @@ public interface GameEngine {
      * @return Whether the engine is running - this is true from the point run() is called to the point shutdown is complete
      */
     boolean isRunning();
+
+    /**
+     * Changes the module environment of the engine, changing the loaded modules to those specified
+     * @param modules The modules to form the new module environment
+     */
+    void changeModuleEnvironment(Set<Module> modules);
 
     /**
      * @return The current state of the engine
@@ -79,8 +89,7 @@ public interface GameEngine {
     boolean hasPendingState();
 
     /**
-     * Creates a context that provides read access to the objects of the engine context and can
-     * be populated with it's own private objects.
+     * Provides the current context of the engine, containing major systems and objects that are shared across the current game state.
      */
-    Context createChildContext();
+    Context getCurrentContext();
 }

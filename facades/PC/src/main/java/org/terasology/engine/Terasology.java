@@ -17,6 +17,7 @@ package org.terasology.engine;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.terasology.config.SystemConfig;
 import org.terasology.crashreporter.CrashReporter;
 import org.terasology.engine.modes.StateLoading;
@@ -27,6 +28,7 @@ import org.terasology.engine.subsystem.EngineSubsystem;
 import org.terasology.engine.subsystem.common.ConfigurationSubsystem;
 import org.terasology.engine.subsystem.common.ThreadManager;
 import org.terasology.engine.subsystem.common.hibernation.HibernationSubsystem;
+import org.terasology.engine.subsystem.common.ui.UISubsystem;
 import org.terasology.engine.subsystem.headless.HeadlessAudio;
 import org.terasology.engine.subsystem.headless.HeadlessGraphics;
 import org.terasology.engine.subsystem.headless.HeadlessInput;
@@ -38,6 +40,7 @@ import org.terasology.engine.subsystem.lwjgl.LwjglGraphics;
 import org.terasology.engine.subsystem.lwjgl.LwjglInput;
 import org.terasology.engine.subsystem.lwjgl.LwjglTimer;
 import org.terasology.game.GameManifest;
+import org.terasology.naming.Name;
 import org.terasology.network.NetworkMode;
 import org.terasology.rendering.nui.layers.mainMenu.savedGames.GameInfo;
 import org.terasology.rendering.nui.layers.mainMenu.savedGames.GameProvider;
@@ -94,6 +97,8 @@ public final class Terasology {
     private static final String NO_SOUND = "-noSound";
     private static final String SERVER_PORT = "-serverPort=";
 
+    private static final ImmutableSet<Name> INITIAL_MODULES = ImmutableSet.of(new Name("engine"));
+
     private static boolean isHeadless;
     private static boolean crashReportEnabled = true;
     private static boolean soundEnabled = true;
@@ -132,10 +137,10 @@ public final class Terasology {
 
             if (isHeadless) {
                 engine.subscribeToStateChange(new HeadlessStateChangeListener(engine));
-                engine.run(new StateHeadlessSetup());
+                engine.run(new StateHeadlessSetup(), INITIAL_MODULES);
             } else {
                 if (loadLastGame) {
-                    engine.getFromEngineContext(ThreadManager.class).submitTask("loadGame", () -> {
+                    engine.getCurrentContext().get(ThreadManager.class).submitTask("loadGame", () -> {
                         GameManifest gameManifest = getLatestGameManifest();
                         if (gameManifest != null) {
                             engine.changeState(new StateLoading(gameManifest, NetworkMode.NONE));
@@ -143,7 +148,7 @@ public final class Terasology {
                     });
                 }
 
-                engine.run(new StateMainMenu());
+                engine.run(new StateMainMenu(), INITIAL_MODULES);
             }
         } catch (Throwable e) {
             // also catch Errors such as UnsatisfiedLink, NoSuchMethodError, etc.
@@ -292,7 +297,8 @@ public final class Terasology {
             builder.add(audio)
                     .add(new LwjglGraphics())
                     .add(new LwjglTimer())
-                    .add(new LwjglInput());
+                    .add(new LwjglInput())
+                    .add(new UISubsystem());
         }
         builder.add(new HibernationSubsystem());
     }

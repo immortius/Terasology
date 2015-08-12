@@ -13,24 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terasology.engine.subsystem.common;
+package org.terasology.engine.subsystem.common.asset;
 
+import org.terasology.assets.management.AssetManager;
+import org.terasology.assets.module.ModuleAwareAssetTypeManager;
 import org.terasology.context.Context;
-import org.terasology.engine.GameEngine;
 import org.terasology.engine.subsystem.EngineSubsystem;
-import org.terasology.physics.CollisionGroupManager;
 
 /**
  *
  */
-public class PhysicsSubsystem implements EngineSubsystem {
+public class AssetSubsystem implements EngineSubsystem {
+    private ModuleAwareAssetTypeManager assetTypeManager;
+
     @Override
     public String getName() {
-        return "Physics";
+        return "Asset";
     }
 
     @Override
     public void populateRootContext(Context rootContext) {
-        rootContext.put(CollisionGroupManager.class, new CollisionGroupManager());
+        assetTypeManager = new ModuleAwareAssetTypeManager();
+        rootContext.put(ModuleAwareAssetTypeManager.class, assetTypeManager);
+        rootContext.put(AssetManager.class, assetTypeManager.getAssetManager());
+    }
+
+    public ModuleAwareAssetTypeManager getAssetTypeManager() {
+        return assetTypeManager;
     }
 }

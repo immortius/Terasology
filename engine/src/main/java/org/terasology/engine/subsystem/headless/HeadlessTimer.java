@@ -35,7 +35,7 @@ public class HeadlessTimer implements TimeSubsystem {
     }
 
     @Override
-    public void preInitialise(Context context) {
+    public void populateRootContext(Context context) {
         initTimer(context);
     }
 
