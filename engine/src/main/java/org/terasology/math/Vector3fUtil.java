@@ -59,7 +59,7 @@ public final class Vector3fUtil {
     public static Vector3f safeNormalize(Vector3f v, Vector3f out) {
         out.set(v);
         out.normalize();
-        if (out.length() < BulletGlobals.SIMD_EPSILON) {
+        if (out.length() < 1.1920929E-7F) {
             out.set(0, 0, 0);
         }
         return out;

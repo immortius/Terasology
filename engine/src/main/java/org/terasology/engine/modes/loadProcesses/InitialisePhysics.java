@@ -16,6 +16,7 @@
 package org.terasology.engine.modes.loadProcesses;
 
 import org.terasology.context.Context;
+import org.terasology.entitySystem.entity.EntityManager;
 import org.terasology.physics.Physics;
 import org.terasology.physics.bullet.BulletPhysics;
 import org.terasology.physics.engine.PhysicsEngine;
@@ -38,7 +39,7 @@ public class InitialisePhysics extends SingleStepLoadProcess {
 
     @Override
     public boolean step() {
-        BulletPhysics physicsEngine = new BulletPhysics(context.get(WorldProvider.class));
+        BulletPhysics physicsEngine = new BulletPhysics(context.get(WorldProvider.class), context.get(EntityManager.class));
         context.put(Physics.class, physicsEngine);
         context.put(PhysicsEngine.class, physicsEngine);
         return true;

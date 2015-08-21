@@ -15,7 +15,7 @@
  */
 package org.terasology.world.block.shapes;
 
-import com.bulletphysics.collision.shapes.CollisionShape;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import org.terasology.assets.Asset;
 import org.terasology.assets.AssetType;
 import org.terasology.assets.ResourceUrn;
@@ -56,7 +56,7 @@ public abstract class BlockShape extends Asset<BlockShapeData> {
      * @param rot
      * @return The collision shape for the given rotation
      */
-    public abstract CollisionShape getCollisionShape(Rotation rot);
+    public abstract btCollisionShape getCollisionShape(Rotation rot);
 
     /**
      * @param rot

@@ -16,7 +16,10 @@
 
 package org.terasology.physics.bullet;
 
-import com.bulletphysics.linearmath.MotionState;
+import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Quaternion;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.linearmath.btMotionState;
 import com.bulletphysics.linearmath.Transform;
 
 import org.terasology.entitySystem.entity.EntityRef;
@@ -24,6 +27,7 @@ import org.terasology.logic.location.LocationComponent;
 import org.terasology.math.VecMath;
 import org.terasology.math.geom.Matrix4f;
 import org.terasology.math.geom.Quat4f;
+import org.terasology.math.geom.Vector3f;
 
 /**
  * This motion state is used to connect rigid body entities to their rigid body in the bullet physics engine.
@@ -32,7 +36,7 @@ import org.terasology.math.geom.Quat4f;
  *
  * @author Immortius
  */
-public class EntityMotionState extends MotionState {
+public class EntityMotionState extends btMotionState {
     private EntityRef entity;
 
     /**
@@ -46,24 +50,25 @@ public class EntityMotionState extends MotionState {
     }
 
     @Override
-    public Transform getWorldTransform(Transform transform) {
+    public void getWorldTransform(Matrix4 worldTrans) {
         LocationComponent loc = entity.getComponent(LocationComponent.class);
         if (loc != null) {
-            // NOTE: JBullet ignores scale anyway
-            transform.set(new javax.vecmath.Matrix4f(VecMath.to(loc.getWorldRotation()), VecMath.to(loc.getWorldPosition()), 1));
+            Quat4f worldRotation = loc.getWorldRotation();
+            Vector3f worldPosition = loc.getWorldPosition();
+            worldTrans.set(worldPosition.x, worldPosition.y, worldPosition.z, worldRotation.x, worldRotation.y, worldRotation.z, worldRotation.w, 1, 1, 1);
         }
-        return transform;
     }
 
     @Override
-    public void setWorldTransform(Transform transform) {
+    public void setWorldTransform(Matrix4 worldTrans) {
         LocationComponent loc = entity.getComponent(LocationComponent.class);
         if (loc != null) {
-            javax.vecmath.Quat4f rot = new javax.vecmath.Quat4f();
-            transform.getRotation(rot);
-            if (!transform.origin.equals(VecMath.to(loc.getWorldPosition())) || !rot.equals(VecMath.to(loc.getWorldRotation()))) {
-                loc.setWorldPosition(VecMath.from(transform.origin));
-                loc.setWorldRotation(VecMath.from(transform.getRotation(new javax.vecmath.Quat4f())));
+            javax.vecmath.Vector3f translation = VecMath.to(worldTrans.getTranslation(new Vector3()));
+            javax.vecmath.Quat4f rotation = VecMath.to(worldTrans.getRotation(new Quaternion()));
+
+            if (!translation.equals(VecMath.to(loc.getWorldPosition())) || !rotation.equals(VecMath.to(loc.getWorldRotation()))) {
+                loc.setWorldPosition(VecMath.from(translation));
+                loc.setWorldRotation(VecMath.from(rotation));
                 entity.saveComponent(loc);
             }
         }

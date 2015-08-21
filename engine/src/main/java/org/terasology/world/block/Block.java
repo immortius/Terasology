@@ -15,8 +15,9 @@
  */
 package org.terasology.world.block;
 
-import com.bulletphysics.collision.shapes.CollisionShape;
-import com.bulletphysics.linearmath.Transform;
+import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.collision.btCollisionShape;
 import com.google.common.collect.Maps;
 import org.terasology.asset.Assets;
 import org.terasology.assets.ResourceUrn;
@@ -25,7 +26,6 @@ import org.terasology.entitySystem.prefab.Prefab;
 import org.terasology.math.AABB;
 import org.terasology.math.Side;
 import org.terasology.math.TeraMath;
-import org.terasology.math.VecMath;
 import org.terasology.math.geom.Vector3f;
 import org.terasology.math.geom.Vector3i;
 import org.terasology.math.geom.Vector4f;
@@ -128,7 +128,7 @@ public final class Block {
     private Map<Side, BlockMeshPart> loweredLiquidMesh = Maps.newEnumMap(Side.class);
 
     /* Collision */
-    private CollisionShape collisionShape;
+    private btCollisionShape collisionShape;
     private Vector3f collisionOffset;
     private AABB bounds = AABB.createEmpty();
 
@@ -588,18 +588,18 @@ public final class Block {
         return color;
     }
 
-    public void setCollision(Vector3f offset, CollisionShape shape) {
+    public void setCollision(Vector3f offset, btCollisionShape shape) {
         collisionShape = shape;
         collisionOffset = offset;
-        Transform t = new Transform(new javax.vecmath.Matrix4f(new javax.vecmath.Quat4f(0, 0, 0, 1), VecMath.to(offset), 1.0f));
-        javax.vecmath.Vector3f min = new javax.vecmath.Vector3f();
-        javax.vecmath.Vector3f max = new javax.vecmath.Vector3f();
-        shape.getAabb(t, min, max);
+        Matrix4 identity = new Matrix4();
+        Vector3 min = new Vector3();
+        Vector3 max = new Vector3();
+        shape.getAabb(identity, min, max);
 
-        bounds = AABB.createMinMax(VecMath.from(min), VecMath.from(max));
+        bounds = AABB.createMinMax(new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z));
     }
 
-    public CollisionShape getCollisionShape() {
+    public btCollisionShape getCollisionShape() {
         return collisionShape;
     }
 

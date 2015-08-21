@@ -15,6 +15,7 @@
  */
 package org.terasology.engine.subsystem.common;
 
+import com.badlogic.gdx.physics.bullet.Bullet;
 import org.terasology.context.Context;
 import org.terasology.engine.GameEngine;
 import org.terasology.engine.subsystem.EngineSubsystem;
@@ -31,6 +32,7 @@ public class PhysicsSubsystem implements EngineSubsystem {
 
     @Override
     public void initialise(GameEngine engine, Context rootContext) {
+        Bullet.init();
         rootContext.put(CollisionGroupManager.class, new CollisionGroupManager());
     }
 }

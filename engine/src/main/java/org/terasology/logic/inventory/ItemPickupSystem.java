@@ -16,8 +16,8 @@
 
 package org.terasology.logic.inventory;
 
-import com.bulletphysics.collision.shapes.BoxShape;
-
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
 import org.terasology.asset.Assets;
 import org.terasology.audio.events.PlaySoundForOwnerEvent;
 import org.terasology.entitySystem.entity.EntityBuilder;
@@ -70,9 +70,9 @@ public class ItemPickupSystem extends BaseComponentSystem {
             mesh.mesh = blockFamily.getArchetypeBlock().getMesh();
             mesh.material = Assets.getMaterial("engine:terrain").get();
         }
-        if (blockFamily.getArchetypeBlock().getCollisionShape() instanceof BoxShape && builder.hasComponent(BoxShapeComponent.class)) {
-            javax.vecmath.Vector3f extents = ((BoxShape) blockFamily.getArchetypeBlock().getCollisionShape()).getHalfExtentsWithoutMargin(new javax.vecmath.Vector3f());
-            extents.scale(2.0f);
+        if (blockFamily.getArchetypeBlock().getCollisionShape() instanceof btBoxShape && builder.hasComponent(BoxShapeComponent.class)) {
+            Vector3 extents = ((btBoxShape) blockFamily.getArchetypeBlock().getCollisionShape()).getHalfExtentsWithoutMargin();
+            extents.scl(2.0f);
             extents.x = Math.max(extents.x, 0.5f);
             extents.y = Math.max(extents.y, 0.5f);
             extents.z = Math.max(extents.z, 0.5f);
