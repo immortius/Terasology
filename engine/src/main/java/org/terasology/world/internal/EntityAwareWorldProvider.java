@@ -258,7 +258,6 @@ public class EntityAwareWorldProvider extends AbstractWorldProviderDecorator imp
             }
         }
 
-
         blockComponent.setBlock(type);
         blockEntity.saveComponent(blockComponent);
 
@@ -470,6 +469,12 @@ public class EntityAwareWorldProvider extends AbstractWorldProviderDecorator imp
             temporaryBlockEntities.remove(entity);
             if (!entity.hasComponent(NetworkComponent.class)) {
                 entity.addComponent(new NetworkComponent());
+            }
+        }
+        if (BlockComponent.class.equals(component)) {
+            BlockComponent blockComp = entity.getComponent(BlockComponent.class);
+            if (!blockComp.getBlock().isKeepActive() && isTemporaryBlock(entity, blockComp.getBlock())) {
+                temporaryBlockEntities.add(entity);
             }
         }
     }
